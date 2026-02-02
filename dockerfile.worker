@@ -1,0 +1,7 @@
+FROM historical-archive-base:latest
+
+# Copy the extraction and recognition modules
+COPY extraction/ /app/extraction/
+COPY recognition/ /app/recognition/
+COPY genealogy/ /app/genealogy/
+COPY pages/ /app/pages/

@@ -1,0 +1,51 @@
+# version: "3.8"
+
+services:
+  base:
+    build:
+      context: .
+      dockerfile: dockerfile.base
+    image: historical-archive-base:latest
+
+  # The main web application service
+  webapp:
+    build:
+      context: .
+      dockerfile: dockerfile.app
+    depends_on:
+      - base
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./.env
+    volumes:
+      - ./app:/app/app
+      - ./pages:/app/pages
+      - ./app/static/images:/app/app/static/images
+      - ./app/vital_records_index:/app/app/vital_records_index
+      - ./genealogy:/app/genealogy
+
+    command: python app/app.py
+
+  # A dedicated worker for heavy OCR tasks
+  ocr-worker:
+    build:
+      context: .
+      dockerfile: dockerfile.worker
+    depends_on:
+      - base
+    env_file:
+      - ./.env
+    volumes:
+      - ./extraction:/app/extraction
+      - ./recognition:/app/recognition
+      - ./pages:/app/pages
+      - ./pages/structured_records:/app/pages/structured_records
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    command: ["sleep", "infinity"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all # Make GPU available to container

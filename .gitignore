@@ -1,0 +1,18 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.ipynb_checkpoints/
+
+# C extensions
+*.so
+
+*.zip
+
+.env
+
+# large model
+recognition/models/trocr_model
+
+# static files
+app/static/images/*
+pages/genealogy_structured_records

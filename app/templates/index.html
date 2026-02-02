@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Czech Historical Records Archive</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --app-bg: #f8f9fa;
+        --sidebar-bg: #ffffff;
+        --card-bg: #ffffff;
+        --text-color: #212529;
+        --text-muted-color: #6c757d;
+        --border-color: #dee2e6;
+        --primary-accent: #0d6efd;
+        --success-accent: #198754;
+        --secondary-accent: #6c757d;
+      }
+
+      [data-bs-theme="dark"] {
+        --app-bg: #121212;
+        --sidebar-bg: #1e1e1e;
+        --card-bg: #1e1e1e;
+        --text-color: #e3e3e3;
+        --text-muted-color: #8e8e8e;
+        --border-color: #333;
+        --primary-accent: #589bff;
+        --success-accent: #4ae290;
+        --secondary-accent: #9e9e9e;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--app-bg);
+        color: var(--text-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      #app-container {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+        grid-template-areas:
+          "header header"
+          "sidebar main";
+      }
+
+      #app-header {
+        grid-area: header;
+        background-color: var(--sidebar-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 1.5rem;
+      }
+
+      #home-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      #sidebar {
+        grid-area: sidebar;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      #main-content {
+        grid-area: main;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+
+      @media (max-width: 992px) {
+        #app-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+          grid-template-areas:
+            "header"
+            "sidebar"
+            "main";
+        }
+        #sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border-color);
+        }
+      }
+
+      .result-card-fresh {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .result-card-fresh:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .card-header-fresh {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        position: relative; /* For the pseudo-element border */
+      }
+      /* Border styles for record titles */
+      .card-header-fresh::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background-color: var(--border-color);
+      }
+      .card-header-fresh.marriage {
+        border-left: 5px solid var(--primary-accent);
+      }
+      .card-header-fresh.birth {
+        border-left: 5px solid var(--success-accent);
+      }
+      .card-header-fresh.death {
+        border-left: 5px solid var(--secondary-accent);
+      }
+
+      .header-icon {
+        font-size: 1.75rem;
+        margin-right: 1rem;
+      }
+      .marriage .header-icon {
+        color: var(--primary-accent);
+      }
+      .birth .header-icon {
+        color: var(--success-accent);
+      }
+      .death .header-icon {
+        color: var(--secondary-accent);
+      }
+
+      .card-content-fresh {
+        padding: 1.5rem;
+      }
+
+      .key-value-pair {
+        display: flex;
+        margin-bottom: 0.6rem;
+        font-size: 1rem;
+      }
+      .key-value-pair .key {
+        font-weight: 600;
+        color: var(--text-muted-color);
+        width: 90px;
+        flex-shrink: 0;
+      }
+
+      .record-image-container {
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin-top: 1.5rem;
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .record-image-container::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      .record-image {
+        width: 100%;
+        display: block;
+      }
+
+      .text-line-overlay {
+        position: absolute;
+        color: #ffffd0; /* Light yellow for high contrast */
+        background-color: rgba(0, 20, 80, 0.6); /* Semi-transparent dark blue */
+        font-family: monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border: 1px solid rgba(173, 216, 230, 0.4); /* Light blue border */
+        box-sizing: border-box;
+        pointer-events: none; /* Make text non-interactive */
+        padding: 0 4px; /* Add some horizontal padding */
+        border-radius: 2px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Shadow for readability */
+      }
+
+      .record-image-dimmed {
+        filter: grayscale(80%) brightness(45%);
+        transition: filter 0.3s ease-in-out;
+      }
+
+      .genealogy-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: 1rem;
+      }
+      .genealogy-list li {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+      }
+      .genealogy-list .icon {
+        margin-right: 0.75rem;
+        margin-top: 0.2rem;
+        color: var(--text-muted-color);
+      }
+
+      .example-search-btn {
+        transition: all 0.2s ease-in-out;
+      }
+      .example-search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <header
+        id="app-header"
+        class="d-flex justify-content-between align-items-center"
+      >
+        <a href="#" id="home-link">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-archive-fill me-2"></i>Czech Historical Archive
+          </h5>
+        </a>
+        <div>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            id="theme-toggler"
+            title="Toggle theme"
+          >
+            <i class="bi bi-moon-stars-fill"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-outline-primary ms-2"
+            data-bs-toggle="modal"
+            data-bs-target="#indexModal"
+          >
+            <i class="bi bi-gear-fill me-1"></i> Build Index
+          </button>
+        </div>
+      </header>
+
+      <aside id="sidebar">
+        <h4 class="mb-3">Search Records</h4>
+        <form id="searchForm">
+          <div class="mb-3">
+            <label for="query" class="form-label fw-semibold">Query</label>
+            <input
+              type="text"
+              class="form-control"
+              id="query"
+              name="query"
+              placeholder="Enter name, place, etc."
+              required
+              minlength="2"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="recordType" class="form-label fw-semibold"
+              >Record Type</label
+            >
+            <select class="form-select" id="recordType" name="record_type">
+              <option value="">All Types</option>
+              <option value="marriage">Marriage</option>
+              <option value="birth">Birth</option>
+              <option value="death">Death</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="searchType" class="form-label fw-semibold"
+              >Search By</label
+            >
+            <select class="form-select" id="searchType" name="search_type">
+              <option value="general">Any Text</option>
+              <option value="name">Name</option>
+              <option value="place">Place</option>
+              <option value="date">Date</option>
+              <option value="field">Specific Field</option>
+            </select>
+          </div>
+          <div class="mb-3" id="fieldSelectContainer" style="display: none">
+            <label for="field" class="form-label fw-semibold">Field</label>
+            <select class="form-select" id="field" name="field">
+              <optgroup label="Marriage Record Fields" class="marriage-fields">
+                <option value="wedding_date">Wedding Date</option>
+                <option value="wedding_place">Wedding Place</option>
+                <option value="bride_name">Bride Name</option>
+                <option value="bride_surname">Bride Surname</option>
+                <option value="groom_name">Groom Name</option>
+                <option value="groom_surname">Groom Surname</option>
+              </optgroup>
+              <optgroup label="Birth Record Fields" class="birth-fields">
+                <option value="name">Name</option>
+                <option value="birthplace">Birthplace</option>
+                <option value="birthdate">Birth Date</option>
+                <option value="mother">Mother</option>
+                <option value="father">Father</option>
+              </optgroup>
+              <optgroup label="Death Record Fields" class="death-fields">
+                <option value="name">Name</option>
+                <option value="time_of_death">Time of Death</option>
+                <option value="reason_of_death">Cause of Death</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="limit" class="form-label fw-semibold"
+              >Result Limit</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              id="limit"
+              name="limit"
+              value="10"
+              min="0"
+            />
+          </div>
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-search me-2"></i>Search
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="clearBtn"
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </aside>
+
+      <main id="main-content" tabindex="-1" role="main">
+        <div
+          id="resultsMessage"
+          class="alert"
+          style="display: none"
+          aria-live="polite"
+        ></div>
+        <div id="resultsList">
+          <div class="text-center text-muted pt-5">
+            <i class="bi bi-journal-richtext" style="font-size: 4rem"></i>
+            <h4 class="mt-3">Welcome to the Czech Historical Archive</h4>
+            <p>Use the search panel on the left to find historical records.</p>
+            <hr class="my-4" />
+            <h6>Example Searches</h6>
+            <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('Josef', 'name', '')"
+              >
+                <i class="bi bi-person-fill me-1"></i>Name: Josef
+              </button>
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('Nebužely', 'place', '')"
+              >
+                <i class="bi bi-geo-alt-fill me-1"></i>Place: Nebužely
+              </button>
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('1862', 'date', 'marriage')"
+              >
+                <i class="bi bi-calendar-fill me-1"></i>Marriage Records Year:
+                1862
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal fade" id="indexModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Build Search Index</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="indexForm">
+              <p class="text-muted small">
+                Rebuild the search index from the source files. This can take a
+                few minutes for large datasets.
+              </p>
+              <div class="mb-3">
+                <label for="inputPath" class="form-label"
+                  >Records Directory Path</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="inputPath"
+                  name="input_path"
+                  placeholder="Default: ./pages/genealogy_structured_records"
+                />
+                <div class="form-text">
+                  Leave blank to use the default server path.
+                </div>
+              </div>
+              <div class="form-check mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="forceRebuildGenealogy"
+                  name="force_rebuild_genealogy"
+                />
+                <label class="form-check-label" for="forceRebuildGenealogy"
+                  >Force rebuild of genealogical data</label
+                >
+              </div>
+              <div id="indexResult" class="mt-3" style="display: none"></div>
+              <hr />
+              <div class="d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-secondary me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="submit" class="btn btn-warning">
+                  Start Build
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // UI
+      const themeToggler = document.getElementById("theme-toggler");
+      const homeLink = document.getElementById("home-link");
+      const htmlEl = document.documentElement;
+      const savedTheme = localStorage.getItem("theme") || "light";
+      htmlEl.setAttribute("data-bs-theme", savedTheme);
+      themeToggler.querySelector("i").className =
+        savedTheme === "light" ? "bi bi-moon-stars-fill" : "bi bi-sun-fill";
+
+      themeToggler.addEventListener("click", () => {
+        const newTheme =
+          htmlEl.getAttribute("data-bs-theme") === "light" ? "dark" : "light";
+        htmlEl.setAttribute("data-bs-theme", newTheme);
+        themeToggler.querySelector("i").className =
+          newTheme === "light" ? "bi bi-moon-stars-fill" : "bi bi-sun-fill";
+        localStorage.setItem("theme", newTheme);
+      });
+
+      // Forms
+      const searchForm = document.getElementById("searchForm");
+      const clearBtn = document.getElementById("clearBtn");
+      const searchTypeSelect = document.getElementById("searchType");
+      const recordTypeSelect = document.getElementById("recordType");
+      const fieldSelectContainer = document.getElementById(
+        "fieldSelectContainer"
+      );
+      const fieldSelect = document.getElementById("field");
+      const initialResultsHTML =
+        document.getElementById("resultsList").innerHTML;
+
+      const resetPage = () => {
+        searchForm.reset();
+        fieldSelectContainer.style.display = "none";
+        document.getElementById("resultsList").innerHTML = initialResultsHTML;
+        document.getElementById("resultsMessage").style.display = "none";
+      };
+
+      clearBtn.addEventListener("click", resetPage);
+      homeLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        resetPage();
+      });
+      searchTypeSelect.addEventListener("change", function () {
+        if (this.value === "field") {
+          fieldSelectContainer.style.display = "block";
+        } else {
+          fieldSelectContainer.style.display = "none";
+        }
+      });
+
+      recordTypeSelect.addEventListener("change", function () {
+        const selectedType = this.value;
+
+        fieldSelect.querySelectorAll("optgroup").forEach((group) => {
+          group.style.display = "none";
+        });
+
+        if (selectedType === "") {
+          // All Types
+          fieldSelect.querySelectorAll("optgroup").forEach((group) => {
+            group.style.display = "block";
+          });
+        } else {
+          const groupToShow = fieldSelect.querySelector(
+            `.${selectedType}-fields`
+          );
+          if (groupToShow) {
+            groupToShow.style.display = "block";
+            const firstOption = groupToShow.querySelector("option");
+            if (firstOption) {
+              fieldSelect.value = firstOption.value;
+            }
+          }
+        }
+      });
+      recordTypeSelect.dispatchEvent(new Event("change"));
+
+      // Search
+      searchForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const resultsList = document.getElementById("resultsList");
+
+        resultsList.innerHTML = `
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <p class="mt-3 text-muted">Searching records...</p>
+                </div>`;
+        showMessage("", "info", false);
+
+        fetch("/search", { method: "POST", body: formData })
+          .then((response) => response.json())
+          .then((data) => {
+            resultsList.innerHTML = "";
+            if (data.error) {
+              showMessage(data.error, "danger");
+              return;
+            }
+
+            showMessage(`Found ${data.count} record(s).`, "success");
+
+            if (data.results.length === 0) {
+              resultsList.innerHTML = `
+                            <div class="text-center text-muted p-5">
+                                <i class="bi bi-search-heart" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3">No Results Found</h4>
+                                <p>Try broadening your search criteria.</p>
+                            </div>`;
+            } else {
+              data.results.forEach((result) => {
+                const card = createResultCard(result);
+                resultsList.appendChild(card);
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Search error:", error);
+            showMessage("An error occurred during the search.", "danger");
+          });
+      });
+
+      document
+        .getElementById("indexForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const indexResult = document.getElementById("indexResult");
+          indexResult.style.display = "block";
+          indexResult.innerHTML = `<div class="alert alert-info d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>Building index...</div>`;
+
+          fetch("/build_index", { method: "POST", body: formData })
+            .then((response) => response.json())
+            .then((data) => {
+              indexResult.innerHTML = data.error
+                ? `<div class="alert alert-danger">${data.error}</div>`
+                : `<div class="alert alert-success">${data.message}</div>`;
+            })
+            .catch((error) => {
+              console.error("Index error:", error);
+              indexResult.innerHTML = `<div class="alert alert-danger">An error occurred while building the index.</div>`;
+            });
+        });
+
+      function performExampleSearch(query, type, recordType) {
+        document.getElementById("query").value = query;
+        document.getElementById("searchType").value = type;
+        document.getElementById("recordType").value = recordType;
+        searchForm.requestSubmit();
+      }
+
+      function showMessage(message, type = "info", show = true) {
+        const resultsMessage = document.getElementById("resultsMessage");
+        if (!show) {
+          resultsMessage.style.display = "none";
+          return;
+        }
+        resultsMessage.className = `alert alert-${type}`;
+        resultsMessage.innerHTML = message;
+        resultsMessage.style.display = "block";
+      }
+
+      const getHeaderInfo = (r) =>
+        // quick overview
+        ({
+          marriage: {
+            icon: "bi-gem",
+            title: `${r.groom_name || "N/A"} & ${r.bride_name || "N/A"}`,
+            subtitle: `Married on ${r.wedding_date || "Unknown"}`,
+          },
+          birth: {
+            icon: "bi-person-arms-up",
+            title: r.name || "Unknown Name",
+            subtitle: `Born on ${r.birthdate || "Unknown"}`,
+          },
+          death: {
+            icon: "bi-heartbreak-fill",
+            title: r.name || "Unknown Name",
+            subtitle: `Died on ${r.date_of_death || "Unknown"}`,
+          },
+        }[r.record_type] || {
+          icon: "bi-file-earmark-text",
+          title: "Record",
+          subtitle: `ID: ${r.id}`,
+        });
+
+      // Results
+      function createResultCard(result) {
+        const card = document.createElement("div");
+        card.className = "card result-card-fresh";
+        const headerInfo = getHeaderInfo(result);
+
+        card.innerHTML = `
+                <div class="card-header-fresh d-flex align-items-center ${
+                  result.record_type
+                }">
+                    <i class="bi ${headerInfo.icon} header-icon"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold">${headerInfo.title}</h5>
+                        <small class="text-muted">${headerInfo.subtitle}</small>
+                    </div>
+                </div>
+                <div class="card-content-fresh">
+                    <div class="details-section">
+                        ${getDetailsHtml(result)}
+                        ${getGenealogyHtml(result.genealogy)}
+                    </div>
+                    <div class="image-section">
+                         <div class="record-image-container" id="image-container-${
+                           result.id
+                         }">
+                            <img src="${
+                              result.image_url
+                            }" class="record-image" alt="Record scan" loading="lazy">
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="toggle-text-${
+                              result.id
+                            }">
+                            <label class="form-check-label" for="toggle-text-${
+                              result.id
+                            }">Show Transcription</label>
+                        </div>
+                    </div>
+                </div>`;
+
+        card
+          .querySelector(`#toggle-text-${result.id}`)
+          .addEventListener("change", function () {
+            const container = card.querySelector(
+              `#image-container-${result.id}`
+            );
+            const mainImage = container.querySelector("img.record-image");
+            container.classList.toggle("transcription-active", this.checked);
+            if (this.checked) {
+              if (mainImage) mainImage.classList.add("record-image-dimmed");
+              fetchAndRenderTextLines(result.region_id, result.file, container);
+            } else {
+              if (mainImage) mainImage.classList.remove("record-image-dimmed");
+              container
+                .querySelectorAll(".text-line-overlay")
+                .forEach((el) => el.remove());
+            }
+          });
+
+        return card;
+      }
+
+      // Genealogy Results
+      function getDetailsHtml(r) {
+        const kv = (key, value) =>
+          value &&
+          value.trim() &&
+          value.trim() !== "Unknown" &&
+          value.trim() !== "in"
+            ? `<div class="key-value-pair"><span class="key">${key}</span><span class="value"><strong>${value}</strong></span></div>`
+            : "";
+        let content = "";
+        // Different records shown different info
+        if (r.record_type === "marriage") {
+          content = `<div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-body-secondary">Groom</h6>
+                            ${kv("Name", `${r.groom_name} ${r.groom_surname}`)}
+                            ${kv(
+                              "Born",
+                              `${r.groom_birthday || ""} in ${
+                                r.groom_birthplace || ""
+                              }`.trim()
+                            )}
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <h6 class="fw-semibold text-body-secondary">Bride</h6>
+                            ${kv("Name", `${r.bride_name} ${r.bride_surname}`)}
+                            ${kv(
+                              "Born",
+                              `${r.bride_birthday || ""} in ${
+                                r.bride_birthplace || ""
+                              }`.trim()
+                            )}
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-semibold text-body-secondary">Wedding</h6>
+                    <div class="row">
+                        <div class="col-md-6">${kv(
+                          "Date",
+                          r.wedding_date
+                        )}</div>
+                        <div class="col-md-6">${kv(
+                          "Place",
+                          r.wedding_place
+                        )}</div>
+                    </div>`;
+        } else if (r.record_type === "birth") {
+          content = `<div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-body-secondary">Birth Details</h6>
+                            ${kv("Name", r.name)} ${kv(
+            "Date",
+            r.birthdate
+          )} ${kv("Place", r.birthplace)}
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <h6 class="fw-semibold text-body-secondary">Parents</h6>
+                             ${kv("Father", r.father)} ${kv("Mother", r.mother)}
+                        </div>
+                    </div>`;
+        } else if (r.record_type === "death") {
+          content = `<h6 class="fw-semibold text-body-secondary">Death Details</h6>
+                    <div class="row">
+                        <div class="col-md-12">${kv("Name", r.name)}</div>
+                        <div class="col-md-6">${kv(
+                          "Date",
+                          r.date_of_death
+                        )}</div>
+                        <div class="col-md-6">${kv(
+                          "Residence",
+                          r.place_of_living
+                        )}</div>
+                        <div class="col-md-12">${kv(
+                          "Cause",
+                          r.reason_of_death
+                        )}</div>
+                    </div>`;
+        }
+        return content;
+      }
+
+      function getGenealogyHtml(genealogy) {
+        if (
+          !genealogy ||
+          Object.keys(genealogy).every(
+            (k) =>
+              !genealogy[k] ||
+              (Array.isArray(genealogy[k]) && genealogy[k].length === 0)
+          )
+        )
+          return "";
+
+        let html =
+          '<hr><h6 class="fw-semibold text-body-secondary">Related Information</h6><ul class="genealogy-list">';
+        // If value is unknown
+        const kv = (value) => (value && value !== "None" ? value : "N/A");
+
+        if (
+          genealogy.birth_info &&
+          (genealogy.birth_info.birthdate || genealogy.birth_info.birthplace)
+        ) {
+          html += `<li><i class="bi bi-person-arms-up icon"></i><div><strong>Born:</strong> <strong>${kv(
+            genealogy.birth_info.birthdate
+          )}</strong> in <strong>${kv(
+            genealogy.birth_info.birthplace
+          )}</strong></div></li>`;
+        }
+        if (genealogy.marriages && genealogy.marriages.length > 0) {
+          genealogy.marriages.forEach((m) => {
+            html += `<li><i class="bi bi-people-fill icon"></i><div><strong>Spouse:</strong> <strong>${kv(
+              m.spouse_name
+            )}</strong> (Married: <strong>${kv(
+              m.wedding_date
+            )}</strong>)</div></li>`;
+          });
+        }
+        if (genealogy.children && genealogy.children.length > 0) {
+          genealogy.children.forEach((c) => {
+            html += `<li><i class="bi bi-person-standing icon"></i><div><strong>Child:</strong> <strong>${kv(
+              c.name
+            )}</strong> (Born: <strong>${kv(c.birthdate)}</strong>)</div></li>`;
+          });
+        }
+        if (
+          genealogy.death_info &&
+          (genealogy.death_info.deathdate || genealogy.death_info.deathplace)
+        ) {
+          html += `<li><i class="bi bi-heartbreak-fill icon"></i><div><strong>Died:</strong> <strong>${kv(
+            genealogy.death_info.deathdate
+          )}</strong> in <strong>${kv(
+            genealogy.death_info.deathplace
+          )}</strong></div></li>`;
+        }
+
+        return html + "</ul>";
+      }
+
+      // Text Overlay
+      function fetchAndRenderTextLines(regionId, filePath, container) {
+        if (container.querySelector(".text-line-overlay")) return;
+        const url = `/get_text_lines?region_id=${encodeURIComponent(
+          regionId
+        )}&file_path=${encodeURIComponent(filePath)}`;
+        fetch(url)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error || !data.text_lines?.length) return;
+            const image = container.querySelector("img");
+            const render = () =>
+              renderTextOverlays(
+                container,
+                image,
+                data.text_lines,
+                data.region_coords
+              );
+            if (image.complete) render();
+            else image.onload = render;
+          })
+          .catch((err) => console.error("Error fetching text lines:", err));
+      }
+
+      function renderTextOverlays(container, image, textLines, regionCoords) {
+        const regionPoints = regionCoords
+          .split(" ")
+          .map((p) => p.split(",").map(Number));
+        const xs = regionPoints.map((p) => p[0]),
+          ys = regionPoints.map((p) => p[1]);
+        const regionMinX = Math.min(...xs),
+          regionMinY = Math.min(...ys);
+        const regionWidth = Math.max(...xs) - regionMinX;
+        const imageScale = image.offsetWidth / regionWidth;
+
+        textLines.forEach((line) => {
+          const linePoints = line.points
+            .split(" ")
+            .map((p) => p.split(",").map(Number));
+          const lineXs = linePoints.map((p) => p[0]),
+            lineYs = linePoints.map((p) => p[1]);
+          const minX = Math.min(...lineXs),
+            minY = Math.min(...lineYs);
+          const width = Math.max(...lineXs) - minX,
+            height = Math.max(...lineYs) - minY;
+
+          const overlay = document.createElement("div");
+          overlay.className = "text-line-overlay";
+          overlay.textContent = line.text;
+          overlay.title = line.text;
+          overlay.style.left = `${(minX - regionMinX) * imageScale}px`;
+          overlay.style.top = `${(minY - regionMinY) * imageScale}px`;
+          overlay.style.width = `${width * imageScale}px`;
+          overlay.style.height = `${height * imageScale}px`;
+
+          // Initial font size
+          let fontSize = Math.max(16, height * imageScale * 0.6);
+          overlay.style.fontSize = `${fontSize}px`;
+
+          container.appendChild(overlay);
+
+          const MIN_FONT_SIZE = 8;
+          while (
+            overlay.scrollWidth > overlay.clientWidth &&
+            fontSize > MIN_FONT_SIZE
+          ) {
+            fontSize -= 1;
+            overlay.style.fontSize = `${fontSize}px`;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
