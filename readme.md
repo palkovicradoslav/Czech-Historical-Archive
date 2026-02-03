@@ -143,7 +143,7 @@ This step uses LLM to extract semantic information contained in recognized text 
 docker-compose exec ocr-worker python extraction/structured_records_extraction.py
 ```
 
-_Tip: For additional help, run either of the above commands with the `-h` switch. Mainly, you may want to try both kraken and TrOCR for text recognition by providing the respective models with `--text-recognition-model`. Furthermore, you can turn on the post processing for text recognition (step 1) with `--post-processing` and/or try different OpenRouter models for information extraction (step 2) with `--model` since the availability of models changes over time._
+_Tip: For additional help, run either of the above commands with the `-h` switch. Mainly, you may want to try both kraken and TrOCR for text recognition by providing the respective models with `--text-recognition-model`. Fine-tuned CRNN models are available in this repository, fine-tuned Transformer models are available on Hugging Face: [Base model](https://huggingface.co/RPalk/trocr_fine_tuned_htr_base) and [Large model](https://huggingface.co/RPalk/trocr_fine_tuned_htr_large). Furthermore, you can turn on the post processing for text recognition (step 1) with `--post-processing` and/or try different OpenRouter models for information extraction (step 2) with `--model` since the availability of models changes over time._
 
 ### 3. Indexing the Records (JSON → Searchable UI)
 
