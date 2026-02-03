@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the Master Thesis associated with it."
+authors:
+  - family-names: "Palkovič"
+    given-names: "Radoslav"
+    affiliation: "Masaryk University, Faculty of Informatics"
+title: "Historical Records Archive Application"
+version: 1.0.0
+license: Apache-2.0
+type: software
+keywords:
+  - "HTR"
+  - "Handwritten Text Recognition"
+  - "Genealogy"
+  - "Layout Analysis"
+  - "Historical Records"
+  - "Information Extraction"
+
+preferred-citation:
+  type: thesis
+  authors:
+    - family-names: "Palkovič"
+      given-names: "Radoslav"
+      affiliation: "Masaryk University, Faculty of Informatics"
+  title: "Automated Transcription and Search in Historical Records Using Handwritten Text Recognition"
+  year: 2025
+  thesis-type: "Master Thesis"
+  institution:
+    name: "Masaryk University, Faculty of Informatics"
+    city: "Brno"
+    country: "CZ"

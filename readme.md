@@ -235,3 +235,17 @@ Each search result is an expandable card that displays:
 - **Transcribed Text View**: A toggle to overlay the HTR-recognized text on the image for verification.
 
 ---
+
+## Citation
+
+```
+@misc{palkovic2025htr,
+      AUTHOR = {Palkovič, Radoslav},
+      TITLE = {Automated Transcription and Search in Historical Records Using Handwritten Text Recognition},
+      YEAR = {2025},
+      TYPE = {Master Thesis},
+      INSTITUTION = {Masaryk University, Faculty of Informatics},
+      LOCATION = {Brno},
+      SUPERVISOR = {Michal Batko}
+}
+```
