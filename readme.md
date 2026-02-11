@@ -8,6 +8,12 @@ This project contains an end-to-end pipeline for
 4. Indexing and full-text search + field search
 5. Flask web UI to browse records and check transcriptions against original images
 
+# Demo
+
+<p align="center">
+   <img src="demo.gif" alt="Demo" />
+</p>
+
 ---
 
 ## Project structure (abridged)
@@ -205,7 +211,6 @@ docker-compose up -d webapp
 - **Record Type**: Select from All Records, Marriage, Birth, or Death records to filter your search.
 
 - **Search Type**: Choose your search method:
-
   - **General Search**: Searches across all text fields
   - **Field-Specific Search**: Searches only specified field in the next drop-down menu
   - **Place Search**: Searches specifically in location/place fields
