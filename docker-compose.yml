@@ -19,13 +19,12 @@ services:
     env_file:
       - ./.env
     volumes:
-      - ./app:/app/app
-      - ./pages:/app/pages
-      - ./app/static/images:/app/app/static/images
-      - ./app/vital_records_index:/app/app/vital_records_index
-      - ./genealogy:/app/genealogy
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./src/app/static/images:/app/src/app/static/images
+      - ./src/app/vital_records_index:/app/src/app/vital_records_index
 
-    command: python app/app.py
+    command: python src/app/app.py
 
   # A dedicated worker for heavy OCR tasks
   ocr-worker:
@@ -37,10 +36,8 @@ services:
     env_file:
       - ./.env
     volumes:
-      - ./extraction:/app/extraction
-      - ./recognition:/app/recognition
-      - ./pages:/app/pages
-      - ./pages/structured_records:/app/pages/structured_records
+      - ./src:/app/src
+      - ./data:/app/data
     deploy:
       resources:
         reservations:

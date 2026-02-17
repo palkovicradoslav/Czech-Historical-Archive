@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Czech Historical Records Archive</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --app-bg: #f8f9fa;
+        --sidebar-bg: #ffffff;
+        --card-bg: #ffffff;
+        --text-color: #212529;
+        --text-muted-color: #6c757d;
+        --border-color: #dee2e6;
+        --primary-accent: #0d6efd;
+        --success-accent: #198754;
+        --secondary-accent: #6c757d;
+      }
+
+      [data-bs-theme="dark"] {
+        --app-bg: #121212;
+        --sidebar-bg: #1e1e1e;
+        --card-bg: #1e1e1e;
+        --text-color: #e3e3e3;
+        --text-muted-color: #8e8e8e;
+        --border-color: #333;
+        --primary-accent: #589bff;
+        --success-accent: #4ae290;
+        --secondary-accent: #9e9e9e;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--app-bg);
+        color: var(--text-color);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      #app-container {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+        grid-template-areas:
+          "header header"
+          "sidebar main";
+      }
+
+      #app-header {
+        grid-area: header;
+        background-color: var(--sidebar-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 1.5rem;
+      }
+
+      #home-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      #sidebar {
+        grid-area: sidebar;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      #main-content {
+        grid-area: main;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+
+      @media (max-width: 992px) {
+        #app-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+          grid-template-areas:
+            "header"
+            "sidebar"
+            "main";
+        }
+        #sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border-color);
+        }
+      }
+
+      .result-card-fresh {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .result-card-fresh:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .card-header-fresh {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        position: relative; /* For the pseudo-element border */
+      }
+      /* Border styles for record titles */
+      .card-header-fresh::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background-color: var(--border-color);
+      }
+      .card-header-fresh.marriage {
+        border-left: 5px solid var(--primary-accent);
+      }
+      .card-header-fresh.birth {
+        border-left: 5px solid var(--success-accent);
+      }
+      .card-header-fresh.death {
+        border-left: 5px solid var(--secondary-accent);
+      }
+
+      .header-icon {
+        font-size: 1.75rem;
+        margin-right: 1rem;
+      }
+      .marriage .header-icon {
+        color: var(--primary-accent);
+      }
+      .birth .header-icon {
+        color: var(--success-accent);
+      }
+      .death .header-icon {
+        color: var(--secondary-accent);
+      }
+
+      .card-content-fresh {
+        padding: 1.5rem;
+      }
+
+      .key-value-pair {
+        display: flex;
+        margin-bottom: 0.6rem;
+        font-size: 1rem;
+      }
+      .key-value-pair .key {
+        font-weight: 600;
+        color: var(--text-muted-color);
+        width: 90px;
+        flex-shrink: 0;
+      }
+
+      .record-image-container {
+        position: relative;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin-top: 1.5rem;
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .record-image-container::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      .record-image {
+        width: 100%;
+        display: block;
+      }
+
+      .text-line-overlay {
+        position: absolute;
+        color: #ffffd0; /* Light yellow for high contrast */
+        background-color: rgba(0, 20, 80, 0.6); /* Semi-transparent dark blue */
+        font-family: monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border: 1px solid rgba(173, 216, 230, 0.4); /* Light blue border */
+        box-sizing: border-box;
+        pointer-events: none; /* Make text non-interactive */
+        padding: 0 4px; /* Add some horizontal padding */
+        border-radius: 2px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Shadow for readability */
+      }
+
+      .record-image-dimmed {
+        filter: grayscale(80%) brightness(45%);
+        transition: filter 0.3s ease-in-out;
+      }
+
+      .genealogy-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: 1rem;
+      }
+      .genealogy-list li {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+      }
+      .genealogy-list .icon {
+        margin-right: 0.75rem;
+        margin-top: 0.2rem;
+        color: var(--text-muted-color);
+      }
+
+      .example-search-btn {
+        transition: all 0.2s ease-in-out;
+      }
+      .example-search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <header
+        id="app-header"
+        class="d-flex justify-content-between align-items-center"
+      >
+        <a href="#" id="home-link">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-archive-fill me-2"></i>Czech Historical Archive
+          </h5>
+        </a>
+        <div>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            id="theme-toggler"
+            title="Toggle theme"
+          >
+            <i class="bi bi-moon-stars-fill"></i>
+          </button>
+          <button
+            class="btn btn-sm btn-outline-primary ms-2"
+            data-bs-toggle="modal"
+            data-bs-target="#indexModal"
+          >
+            <i class="bi bi-gear-fill me-1"></i> Build Index
+          </button>
+        </div>
+      </header>
+
+      <aside id="sidebar">
+        <h4 class="mb-3">Search Records</h4>
+        <form id="searchForm">
+          <div class="mb-3">
+            <label for="query" class="form-label fw-semibold">Query</label>
+            <input
+              type="text"
+              class="form-control"
+              id="query"
+              name="query"
+              placeholder="Enter name, place, etc."
+              required
+              minlength="2"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="recordType" class="form-label fw-semibold"
+              >Record Type</label
+            >
+            <select class="form-select" id="recordType" name="record_type">
+              <option value="">All Types</option>
+              <option value="marriage">Marriage</option>
+              <option value="birth">Birth</option>
+              <option value="death">Death</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="searchType" class="form-label fw-semibold"
+              >Search By</label
+            >
+            <select class="form-select" id="searchType" name="search_type">
+              <option value="general">Any Text</option>
+              <option value="name">Name</option>
+              <option value="place">Place</option>
+              <option value="date">Date</option>
+              <option value="field">Specific Field</option>
+            </select>
+          </div>
+          <div class="mb-3" id="fieldSelectContainer" style="display: none">
+            <label for="field" class="form-label fw-semibold">Field</label>
+            <select class="form-select" id="field" name="field">
+              <optgroup label="Marriage Record Fields" class="marriage-fields">
+                <option value="wedding_date">Wedding Date</option>
+                <option value="wedding_place">Wedding Place</option>
+                <option value="bride_name">Bride Name</option>
+                <option value="bride_surname">Bride Surname</option>
+                <option value="groom_name">Groom Name</option>
+                <option value="groom_surname">Groom Surname</option>
+              </optgroup>
+              <optgroup label="Birth Record Fields" class="birth-fields">
+                <option value="name">Name</option>
+                <option value="birthplace">Birthplace</option>
+                <option value="birthdate">Birth Date</option>
+                <option value="mother">Mother</option>
+                <option value="father">Father</option>
+              </optgroup>
+              <optgroup label="Death Record Fields" class="death-fields">
+                <option value="name">Name</option>
+                <option value="time_of_death">Time of Death</option>
+                <option value="reason_of_death">Cause of Death</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="limit" class="form-label fw-semibold"
+              >Result Limit</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              id="limit"
+              name="limit"
+              value="10"
+              min="0"
+            />
+          </div>
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-search me-2"></i>Search
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="clearBtn"
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </aside>
+
+      <main id="main-content" tabindex="-1" role="main">
+        <div
+          id="resultsMessage"
+          class="alert"
+          style="display: none"
+          aria-live="polite"
+        ></div>
+        <div id="resultsList">
+          <div class="text-center text-muted pt-5">
+            <i class="bi bi-journal-richtext" style="font-size: 4rem"></i>
+            <h4 class="mt-3">Welcome to the Czech Historical Archive</h4>
+            <p>Use the search panel on the left to find historical records.</p>
+            <hr class="my-4" />
+            <h6>Example Searches</h6>
+            <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('Josef', 'name', '')"
+              >
+                <i class="bi bi-person-fill me-1"></i>Name: Josef
+              </button>
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('Nebužely', 'place', '')"
+              >
+                <i class="bi bi-geo-alt-fill me-1"></i>Place: Nebužely
+              </button>
+              <button
+                class="btn btn-sm btn-light border example-search-btn"
+                onclick="performExampleSearch('1862', 'date', 'marriage')"
+              >
+                <i class="bi bi-calendar-fill me-1"></i>Marriage Records Year:
+                1862
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+  </body>
+</html>

@@ -10,9 +10,34 @@ __pycache__/
 
 .env
 
-# large model
-recognition/models/trocr_model
+## Project-specific
 
-# static files
-app/static/images/*
-pages/genealogy_structured_records
+# Ignore data (generated artifacts: images, recognition outputs, parsed records)
+/data/
+
+# Recognition models (large binaries)
+/src/recognition/models/
+
+# Kraken/TrOCR model folders
+*.mlmodel/
+*/trocr_model/
+
+# App runtime artifacts
+/src/app/vital_records_index/
+*.pkl
+
+# Environment files
+.env
+.env.*
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+
+# Tests / caches
+.pytest_cache/

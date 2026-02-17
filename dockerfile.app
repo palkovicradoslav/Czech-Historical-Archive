@@ -1,11 +1,11 @@
 FROM historical-archive-base:latest
 
 # Copy the application code into the container
-COPY app/ /app/app/
-COPY pages/ /app/pages/
+COPY src/ /app/src/
+COPY data/ /app/data/
 
 WORKDIR /app
 
 EXPOSE 5000
 
-CMD ["python", "app/app.py"]
+CMD ["python", "src/app/app.py"]
