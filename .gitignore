@@ -10,20 +10,15 @@ __pycache__/
 
 .env
 
-## Project-specific
-
-# Ignore data (generated artifacts: images, recognition outputs, parsed records)
-/data/
-
-# Recognition models (large binaries)
-/src/recognition/models/
-
-# Kraken/TrOCR model folders
-*.mlmodel/
-*/trocr_model/
+src/recognition/models/trocr_model/
 
 # App runtime artifacts
 /src/app/vital_records_index/
+/src/app/static/
+
+# temporary 
+data
+
 *.pkl
 
 # Environment files

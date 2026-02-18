@@ -1,7 +1,7 @@
-from records_indexer import VitalRecordsIndexer
 import os
 import pickle
 from flask import Flask, render_template, request, jsonify, url_for, send_from_directory, send_file
+from records_indexer import VitalRecordsIndexer
 import logging
 import sys
 import json
@@ -10,31 +10,36 @@ from io import BytesIO
 from PIL import Image
 from functools import lru_cache
 
-# Ensure imports resolve to src/ folder
-REPO_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-REPO_ROOT = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, REPO_SRC)
+
+sys.path.insert(1, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
 
 from utils import setup_logger  # NOQA
-from genealogy.genealogy import process_and_save  # NOQA
 
-app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
+sys.path.insert(1, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'genealogy')))
+
+from genealogy import process_and_save  # NOQA
+
+app = Flask(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_DIR = os.path.join(REPO_ROOT, 'data')
-
-RECORDS_DIR = os.path.normpath(os.path.join(DATA_DIR, 'structured_records'))
-GEN_RECORDS_DIR = os.path.normpath(os.path.join(
-    DATA_DIR, 'genealogy_structured_records'))
-CROPPED_IMAGES_DIR = os.path.normpath(os.path.join(BASE_DIR, 'static', 'images'))
-# If static images were not moved into src/app, fall back to legacy location
-LEGACY_CROPPED = os.path.normpath(os.path.join(REPO_ROOT, 'app', 'static', 'images'))
-if not os.path.exists(CROPPED_IMAGES_DIR) and os.path.exists(LEGACY_CROPPED):
-    CROPPED_IMAGES_DIR = LEGACY_CROPPED
-INDEX_DIR = os.path.normpath(os.path.join(BASE_DIR, 'vital_records_index'))
-IMAGES_DIR = os.path.normpath(os.path.join(DATA_DIR, 'images'))
+RECORDS_DIR = os.path.normpath(
+    os.path.join(BASE_DIR, '..', '..', 'data', 'structured_records')
+)
+GEN_RECORDS_DIR = os.path.normpath(
+    os.path.join(BASE_DIR, '..', '..', 'data', 'genealogy_structured_records')
+)
+CROPPED_IMAGES_DIR = os.path.normpath(
+    os.path.join(BASE_DIR, 'static', 'images')
+)
+INDEX_DIR = os.path.normpath(
+    os.path.join(BASE_DIR, 'vital_records_index')
+)
+IMAGES_DIR = os.path.normpath(
+    os.path.join(BASE_DIR, '..', '..', 'data', 'images')
+)
 STATE_FILE = os.path.join(INDEX_DIR, 'records_state.json')
 
 GENEALOGY_FILE = os.path.join(INDEX_DIR, 'family_tree.pkl')
@@ -251,8 +256,6 @@ def compute_bounding_box(all_coords, padding=0):
     max_y = max(ys) + padding
     return min_x, min_y, max_x, max_y
 
-# -- rest of original app.py code remains unchanged --
-
 
 @app.route('/api/placeholder/<int:width>/<int:height>')
 def placeholder(width, height):
@@ -263,7 +266,242 @@ def placeholder(width, height):
     buf.seek(0)
     return send_file(buf, mimetype="image/jpeg")
 
-# For brevity keep the rest of file identical to original implementation
+
+@app.route('/')
+def home():
+    """Render the home page with search form"""
+    return render_template('index.html')
+
+
+@app.route('/static/images/<path:filename>')
+def serve_image(filename):
+    """Serve images from the images directory"""
+    return send_from_directory(CROPPED_IMAGES_DIR, filename)
+
+
+@app.route('/search', methods=['POST'])
+def search():
+    """Handle search requests"""
+    if indexer is None:
+        return jsonify({"error": "Index not initialized. Please build the index first."}), 500
+
+    search_type = request.form.get('search_type', 'general')
+    query = request.form.get('query', '')
+    field = request.form.get('field', None)
+    record_type = request.form.get('record_type', None)
+    limit = int(request.form.get('limit', 10))
+    limit = None if limit == 0 else limit
+
+    if not query:
+        return jsonify({"error": "Query cannot be empty"}), 400
+
+    # Early return for very short queries
+    if len(query) < 2:
+        return jsonify({"error": "Query too short"}), 400
+
+    try:
+        results = []
+        if search_type == 'general':
+            results = indexer.search(
+                query, record_type=record_type, limit=limit)
+        elif search_type == 'field' and field:
+            results = indexer.search(
+                query, field=field, record_type=record_type, limit=limit)
+        elif search_type == 'name':
+            results = indexer.search_by_name(
+                query, record_type=record_type, limit=limit)
+        elif search_type == 'place':
+            results = indexer.search_by_place(
+                query, record_type=record_type, limit=limit)
+        elif search_type == 'date':
+            results = indexer.search_by_date(
+                query, record_type=record_type, limit=limit)
+
+        processed_results = []
+        for r in results:
+
+            if r.get('cropped_image_url'):
+                r['image_url'] = url_for(
+                    'serve_image', filename=r['cropped_image_url'])
+            else:
+                # Fallback to a placeholder if image creation failed during indexing
+                r['image_url'] = url_for('placeholder', width=300, height=100)
+
+            # Clean up null values for display
+            for k, v in r.items():
+                if v == "null":
+                    r[k] = 'Unknown'
+
+            # Add genealogy information
+            r['genealogy'] = get_genealogy_info(r)
+            gen_bi = r['genealogy'].get('birth_info', {})
+            if gen_bi != {} and ('born on' in r['additional_info'] or
+                                 (gen_bi != {} and gen_bi.get('birthdate') is None and r.get('place_of_living') is not None)):
+                r['genealogy']['birth_info'] = None
+
+            processed_results.append(r)
+
+        return jsonify({"results": processed_results, "count": len(processed_results)})
+
+    except Exception as e:
+        return jsonify({"error": f"Search error: {str(e)}"}), 500
+
+
+@app.route('/build_index', methods=['POST'])
+def build_index():
+    """Build or rebuild the index from JSON data"""
+    global indexer
+    global family_tree_builder
+
+    input_path = request.form.get(
+        'input_path', '')
+    if input_path == '':
+        input_path = GEN_RECORDS_DIR if os.path.exists(
+            GEN_RECORDS_DIR) else RECORDS_DIR
+    force_rebuild_genealogy = request.form.get(
+        'force_rebuild_genealogy') == 'on'
+
+    if not os.path.exists(input_path):
+        return jsonify({"error": f"Input path {input_path} does not exist"}), 400
+
+    # Compare state
+    old_state = load_records_state()
+    new_state = get_current_records_state()
+
+    if old_state != new_state:
+        logging.info(
+            "Detected changes in records directory; clearing cropped images.")
+        clear_cropped_images_and_gen_records()
+        save_records_state(new_state)
+        force_rebuild_genealogy = True
+    else:
+        logging.info(
+            "No changes in records directory; cropped images left intact.")
+
+    try:
+        # Handle genealogy data loading/rebuilding
+        if force_rebuild_genealogy:
+            logging.info(
+                "Force rebuild genealogy option selected - recalculating genealogical connections")
+            family_tree_builder = process_and_save(
+                RECORDS_DIR, GEN_RECORDS_DIR)
+            save_family_tree_builder(family_tree_builder)
+            genealogy_message = "genealogical information recalculated"
+        else:
+            # Try to load existing genealogy data first
+            family_tree_builder = load_family_tree_builder()
+            if family_tree_builder is None:
+                logging.info(
+                    "No existing genealogy data found - calculating genealogical connections")
+                family_tree_builder = process_and_save(
+                    RECORDS_DIR, GEN_RECORDS_DIR)
+                save_family_tree_builder(family_tree_builder)
+                genealogy_message = "genealogical information calculated (no existing data found)"
+            else:
+                genealogy_message = "genealogical information loaded from file"
+
+        indexer = VitalRecordsIndexer(index_dir=INDEX_DIR)
+        record_count = indexer.build_index(input_path)
+
+        return jsonify({
+            "success": True,
+            "message": f"Successfully indexed {record_count} vital records, {genealogy_message}",
+            "record_count": record_count
+        })
+    except Exception as e:
+        return jsonify({"error": f"Indexing error: {str(e)}"}), 500
+
+
+@lru_cache(maxsize=1000)
+def extract_text_lines_from_pagexml(pagexml_path, region_id):
+    """"Returns text lines for specified text region"""
+    try:
+        tree = ET.parse(pagexml_path)
+        root = tree.getroot()
+
+        ns = {'ns': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15'}
+
+        text_region = root.find(f".//ns:TextRegion[@id='{region_id}']", ns)
+        if text_region is None:
+            return []
+
+        text_lines = []
+        for text_line_elem in text_region.findall(".//ns:TextLine", ns):
+            text_elem = text_line_elem.find(".//ns:TextEquiv/ns:Unicode", ns)
+            text = text_elem.text if text_elem is not None and text_elem.text is not None else ""
+
+            # Get the line coordinates
+            coords_elem = text_line_elem.find(".//ns:Coords", ns)
+            points = coords_elem.get(
+                'points') if coords_elem is not None else ""
+
+            line_id = text_line_elem.get('id', '')
+
+            # Add normalized information to the text_lines
+            text_lines.append({
+                'id': line_id,
+                'text': text,
+                'points': points
+            })
+
+        return text_lines
+
+    except Exception as e:
+        logging.error(f"Error extracting text lines: {str(e)}")
+        return []
+
+
+@app.route('/get_text_lines')
+def get_text_lines():
+    """Get text lines for a specific region"""
+    region_id = request.args.get('region_id')
+    file_path = request.args.get('file_path')
+
+    if not region_id or not file_path:
+        return jsonify({"error": "Missing region_id or file_path parameter"}), 400
+
+    pagexml_path = file_path
+
+    if not os.path.exists(pagexml_path):
+        return jsonify({"error": f"PageXML file not found: {pagexml_path}"}), 404
+
+    try:
+        text_lines = extract_text_lines_from_pagexml(pagexml_path, region_id)
+
+        region_coords = get_region_coordinates(pagexml_path, region_id)
+
+        return jsonify({
+            "text_lines": text_lines,
+            "region_coords": region_coords
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error extracting text lines: {str(e)}"}), 500
+
+
+def get_region_coordinates(pagexml_path, region_id):
+    """Extract coordinates for a specific region from a PageXML file"""
+    try:
+        if not os.path.exists(pagexml_path):
+            logging.error(f"PageXML file not found: {pagexml_path}")
+            return None
+
+        tree = ET.parse(pagexml_path)
+        root = tree.getroot()
+
+        ns = {'ns': 'http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15'}
+
+        text_region = root.find(f".//ns:TextRegion[@id='{region_id}']", ns)
+        if text_region is None:
+            return None
+
+        coords_elem = text_region.find(".//ns:Coords", ns)
+        if coords_elem is not None:
+            return coords_elem.get('points')
+
+        return None
+    except Exception as e:
+        logging.error(f"Error getting region coordinates: {str(e)}")
+        return None
 
 
 if __name__ == '__main__':

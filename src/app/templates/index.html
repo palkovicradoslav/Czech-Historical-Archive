@@ -398,5 +398,528 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <div class="modal fade" id="indexModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Build Search Index</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="indexForm">
+              <p class="text-muted small">
+                Rebuild the search index from the source files. This can take a
+                few minutes for large datasets.
+              </p>
+              <div class="mb-3">
+                <label for="inputPath" class="form-label"
+                  >Records Directory Path</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="inputPath"
+                  name="input_path"
+                  placeholder="Default: ./pages/genealogy_structured_records"
+                />
+                <div class="form-text">
+                  Leave blank to use the default server path.
+                </div>
+              </div>
+              <div class="form-check mb-3">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="forceRebuildGenealogy"
+                  name="force_rebuild_genealogy"
+                />
+                <label class="form-check-label" for="forceRebuildGenealogy"
+                  >Force rebuild of genealogical data</label
+                >
+              </div>
+              <div id="indexResult" class="mt-3" style="display: none"></div>
+              <hr />
+              <div class="d-flex justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-secondary me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="submit" class="btn btn-warning">
+                  Start Build
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // UI
+      const themeToggler = document.getElementById("theme-toggler");
+      const homeLink = document.getElementById("home-link");
+      const htmlEl = document.documentElement;
+      const savedTheme = localStorage.getItem("theme") || "light";
+      htmlEl.setAttribute("data-bs-theme", savedTheme);
+      themeToggler.querySelector("i").className =
+        savedTheme === "light" ? "bi bi-moon-stars-fill" : "bi bi-sun-fill";
+
+      themeToggler.addEventListener("click", () => {
+        const newTheme =
+          htmlEl.getAttribute("data-bs-theme") === "light" ? "dark" : "light";
+        htmlEl.setAttribute("data-bs-theme", newTheme);
+        themeToggler.querySelector("i").className =
+          newTheme === "light" ? "bi bi-moon-stars-fill" : "bi bi-sun-fill";
+        localStorage.setItem("theme", newTheme);
+      });
+
+      // Forms
+      const searchForm = document.getElementById("searchForm");
+      const clearBtn = document.getElementById("clearBtn");
+      const searchTypeSelect = document.getElementById("searchType");
+      const recordTypeSelect = document.getElementById("recordType");
+      const fieldSelectContainer = document.getElementById(
+        "fieldSelectContainer"
+      );
+      const fieldSelect = document.getElementById("field");
+      const initialResultsHTML =
+        document.getElementById("resultsList").innerHTML;
+
+      const resetPage = () => {
+        searchForm.reset();
+        fieldSelectContainer.style.display = "none";
+        document.getElementById("resultsList").innerHTML = initialResultsHTML;
+        document.getElementById("resultsMessage").style.display = "none";
+      };
+
+      clearBtn.addEventListener("click", resetPage);
+      homeLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        resetPage();
+      });
+      searchTypeSelect.addEventListener("change", function () {
+        if (this.value === "field") {
+          fieldSelectContainer.style.display = "block";
+        } else {
+          fieldSelectContainer.style.display = "none";
+        }
+      });
+
+      recordTypeSelect.addEventListener("change", function () {
+        const selectedType = this.value;
+
+        fieldSelect.querySelectorAll("optgroup").forEach((group) => {
+          group.style.display = "none";
+        });
+
+        if (selectedType === "") {
+          // All Types
+          fieldSelect.querySelectorAll("optgroup").forEach((group) => {
+            group.style.display = "block";
+          });
+        } else {
+          const groupToShow = fieldSelect.querySelector(
+            `.${selectedType}-fields`
+          );
+          if (groupToShow) {
+            groupToShow.style.display = "block";
+            const firstOption = groupToShow.querySelector("option");
+            if (firstOption) {
+              fieldSelect.value = firstOption.value;
+            }
+          }
+        }
+      });
+      recordTypeSelect.dispatchEvent(new Event("change"));
+
+      // Search
+      searchForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const resultsList = document.getElementById("resultsList");
+
+        resultsList.innerHTML = `
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <p class="mt-3 text-muted">Searching records...</p>
+                </div>`;
+        showMessage("", "info", false);
+
+        fetch("/search", { method: "POST", body: formData })
+          .then((response) => response.json())
+          .then((data) => {
+            resultsList.innerHTML = "";
+            if (data.error) {
+              showMessage(data.error, "danger");
+              return;
+            }
+
+            showMessage(`Found ${data.count} record(s).`, "success");
+
+            if (data.results.length === 0) {
+              resultsList.innerHTML = `
+                            <div class="text-center text-muted p-5">
+                                <i class="bi bi-search-heart" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3">No Results Found</h4>
+                                <p>Try broadening your search criteria.</p>
+                            </div>`;
+            } else {
+              data.results.forEach((result) => {
+                const card = createResultCard(result);
+                resultsList.appendChild(card);
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Search error:", error);
+            showMessage("An error occurred during the search.", "danger");
+          });
+      });
+
+      document
+        .getElementById("indexForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const indexResult = document.getElementById("indexResult");
+          indexResult.style.display = "block";
+          indexResult.innerHTML = `<div class="alert alert-info d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>Building index...</div>`;
+
+          fetch("/build_index", { method: "POST", body: formData })
+            .then((response) => response.json())
+            .then((data) => {
+              indexResult.innerHTML = data.error
+                ? `<div class="alert alert-danger">${data.error}</div>`
+                : `<div class="alert alert-success">${data.message}</div>`;
+            })
+            .catch((error) => {
+              console.error("Index error:", error);
+              indexResult.innerHTML = `<div class="alert alert-danger">An error occurred while building the index.</div>`;
+            });
+        });
+
+      function performExampleSearch(query, type, recordType) {
+        document.getElementById("query").value = query;
+        document.getElementById("searchType").value = type;
+        document.getElementById("recordType").value = recordType;
+        searchForm.requestSubmit();
+      }
+
+      function showMessage(message, type = "info", show = true) {
+        const resultsMessage = document.getElementById("resultsMessage");
+        if (!show) {
+          resultsMessage.style.display = "none";
+          return;
+        }
+        resultsMessage.className = `alert alert-${type}`;
+        resultsMessage.innerHTML = message;
+        resultsMessage.style.display = "block";
+      }
+
+      const getHeaderInfo = (r) =>
+        // quick overview
+        ({
+          marriage: {
+            icon: "bi-gem",
+            title: `${r.groom_name || "N/A"} & ${r.bride_name || "N/A"}`,
+            subtitle: `Married on ${r.wedding_date || "Unknown"}`,
+          },
+          birth: {
+            icon: "bi-person-arms-up",
+            title: r.name || "Unknown Name",
+            subtitle: `Born on ${r.birthdate || "Unknown"}`,
+          },
+          death: {
+            icon: "bi-heartbreak-fill",
+            title: r.name || "Unknown Name",
+            subtitle: `Died on ${r.date_of_death || "Unknown"}`,
+          },
+        }[r.record_type] || {
+          icon: "bi-file-earmark-text",
+          title: "Record",
+          subtitle: `ID: ${r.id}`,
+        });
+
+      // Results
+      function createResultCard(result) {
+        const card = document.createElement("div");
+        card.className = "card result-card-fresh";
+        const headerInfo = getHeaderInfo(result);
+
+        card.innerHTML = `
+                <div class="card-header-fresh d-flex align-items-center ${
+                  result.record_type
+                }">
+                    <i class="bi ${headerInfo.icon} header-icon"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold">${headerInfo.title}</h5>
+                        <small class="text-muted">${headerInfo.subtitle}</small>
+                    </div>
+                </div>
+                <div class="card-content-fresh">
+                    <div class="details-section">
+                        ${getDetailsHtml(result)}
+                        ${getGenealogyHtml(result.genealogy)}
+                    </div>
+                    <div class="image-section">
+                         <div class="record-image-container" id="image-container-${
+                           result.id
+                         }">
+                            <img src="${
+                              result.image_url
+                            }" class="record-image" alt="Record scan" loading="lazy">
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="toggle-text-${
+                              result.id
+                            }">
+                            <label class="form-check-label" for="toggle-text-${
+                              result.id
+                            }">Show Transcription</label>
+                        </div>
+                    </div>
+                </div>`;
+
+        card
+          .querySelector(`#toggle-text-${result.id}`)
+          .addEventListener("change", function () {
+            const container = card.querySelector(
+              `#image-container-${result.id}`
+            );
+            const mainImage = container.querySelector("img.record-image");
+            container.classList.toggle("transcription-active", this.checked);
+            if (this.checked) {
+              if (mainImage) mainImage.classList.add("record-image-dimmed");
+              fetchAndRenderTextLines(result.region_id, result.file, container);
+            } else {
+              if (mainImage) mainImage.classList.remove("record-image-dimmed");
+              container
+                .querySelectorAll(".text-line-overlay")
+                .forEach((el) => el.remove());
+            }
+          });
+
+        return card;
+      }
+
+      // Genealogy Results
+      function getDetailsHtml(r) {
+        const kv = (key, value) =>
+          value &&
+          value.trim() &&
+          value.trim() !== "Unknown" &&
+          value.trim() !== "in"
+            ? `<div class="key-value-pair"><span class="key">${key}</span><span class="value"><strong>${value}</strong></span></div>`
+            : "";
+        let content = "";
+        // Different records shown different info
+        if (r.record_type === "marriage") {
+          content = `<div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-body-secondary">Groom</h6>
+                            ${kv("Name", `${r.groom_name} ${r.groom_surname}`)}
+                            ${kv(
+                              "Born",
+                              `${r.groom_birthday || ""} in ${
+                                r.groom_birthplace || ""
+                              }`.trim()
+                            )}
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <h6 class="fw-semibold text-body-secondary">Bride</h6>
+                            ${kv("Name", `${r.bride_name} ${r.bride_surname}`)}
+                            ${kv(
+                              "Born",
+                              `${r.bride_birthday || ""} in ${
+                                r.bride_birthplace || ""
+                              }`.trim()
+                            )}
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-semibold text-body-secondary">Wedding</h6>
+                    <div class="row">
+                        <div class="col-md-6">${kv(
+                          "Date",
+                          r.wedding_date
+                        )}</div>
+                        <div class="col-md-6">${kv(
+                          "Place",
+                          r.wedding_place
+                        )}</div>
+                    </div>`;
+        } else if (r.record_type === "birth") {
+          content = `<div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-body-secondary">Birth Details</h6>
+                            ${kv("Name", r.name)} ${kv(
+            "Date",
+            r.birthdate
+          )} ${kv("Place", r.birthplace)}
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <h6 class="fw-semibold text-body-secondary">Parents</h6>
+                             ${kv("Father", r.father)} ${kv("Mother", r.mother)}
+                        </div>
+                    </div>`;
+        } else if (r.record_type === "death") {
+          content = `<h6 class="fw-semibold text-body-secondary">Death Details</h6>
+                    <div class="row">
+                        <div class="col-md-12">${kv("Name", r.name)}</div>
+                        <div class="col-md-6">${kv(
+                          "Date",
+                          r.date_of_death
+                        )}</div>
+                        <div class="col-md-6">${kv(
+                          "Residence",
+                          r.place_of_living
+                        )}</div>
+                        <div class="col-md-12">${kv(
+                          "Cause",
+                          r.reason_of_death
+                        )}</div>
+                    </div>`;
+        }
+        return content;
+      }
+
+      function getGenealogyHtml(genealogy) {
+        if (
+          !genealogy ||
+          Object.keys(genealogy).every(
+            (k) =>
+              !genealogy[k] ||
+              (Array.isArray(genealogy[k]) && genealogy[k].length === 0)
+          )
+        )
+          return "";
+
+        let html =
+          '<hr><h6 class="fw-semibold text-body-secondary">Related Information</h6><ul class="genealogy-list">';
+        // If value is unknown
+        const kv = (value) => (value && value !== "None" ? value : "N/A");
+
+        if (
+          genealogy.birth_info &&
+          (genealogy.birth_info.birthdate || genealogy.birth_info.birthplace)
+        ) {
+          html += `<li><i class="bi bi-person-arms-up icon"></i><div><strong>Born:</strong> <strong>${kv(
+            genealogy.birth_info.birthdate
+          )}</strong> in <strong>${kv(
+            genealogy.birth_info.birthplace
+          )}</strong></div></li>`;
+        }
+        if (genealogy.marriages && genealogy.marriages.length > 0) {
+          genealogy.marriages.forEach((m) => {
+            html += `<li><i class="bi bi-people-fill icon"></i><div><strong>Spouse:</strong> <strong>${kv(
+              m.spouse_name
+            )}</strong> (Married: <strong>${kv(
+              m.wedding_date
+            )}</strong>)</div></li>`;
+          });
+        }
+        if (genealogy.children && genealogy.children.length > 0) {
+          genealogy.children.forEach((c) => {
+            html += `<li><i class="bi bi-person-standing icon"></i><div><strong>Child:</strong> <strong>${kv(
+              c.name
+            )}</strong> (Born: <strong>${kv(c.birthdate)}</strong>)</div></li>`;
+          });
+        }
+        if (
+          genealogy.death_info &&
+          (genealogy.death_info.deathdate || genealogy.death_info.deathplace)
+        ) {
+          html += `<li><i class="bi bi-heartbreak-fill icon"></i><div><strong>Died:</strong> <strong>${kv(
+            genealogy.death_info.deathdate
+          )}</strong> in <strong>${kv(
+            genealogy.death_info.deathplace
+          )}</strong></div></li>`;
+        }
+
+        return html + "</ul>";
+      }
+
+      // Text Overlay
+      function fetchAndRenderTextLines(regionId, filePath, container) {
+        if (container.querySelector(".text-line-overlay")) return;
+        const url = `/get_text_lines?region_id=${encodeURIComponent(
+          regionId
+        )}&file_path=${encodeURIComponent(filePath)}`;
+        fetch(url)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.error || !data.text_lines?.length) return;
+            const image = container.querySelector("img");
+            const render = () =>
+              renderTextOverlays(
+                container,
+                image,
+                data.text_lines,
+                data.region_coords
+              );
+            if (image.complete) render();
+            else image.onload = render;
+          })
+          .catch((err) => console.error("Error fetching text lines:", err));
+      }
+
+      function renderTextOverlays(container, image, textLines, regionCoords) {
+        const regionPoints = regionCoords
+          .split(" ")
+          .map((p) => p.split(",").map(Number));
+        const xs = regionPoints.map((p) => p[0]),
+          ys = regionPoints.map((p) => p[1]);
+        const regionMinX = Math.min(...xs),
+          regionMinY = Math.min(...ys);
+        const regionWidth = Math.max(...xs) - regionMinX;
+        const imageScale = image.offsetWidth / regionWidth;
+
+        textLines.forEach((line) => {
+          const linePoints = line.points
+            .split(" ")
+            .map((p) => p.split(",").map(Number));
+          const lineXs = linePoints.map((p) => p[0]),
+            lineYs = linePoints.map((p) => p[1]);
+          const minX = Math.min(...lineXs),
+            minY = Math.min(...lineYs);
+          const width = Math.max(...lineXs) - minX,
+            height = Math.max(...lineYs) - minY;
+
+          const overlay = document.createElement("div");
+          overlay.className = "text-line-overlay";
+          overlay.textContent = line.text;
+          overlay.title = line.text;
+          overlay.style.left = `${(minX - regionMinX) * imageScale}px`;
+          overlay.style.top = `${(minY - regionMinY) * imageScale}px`;
+          overlay.style.width = `${width * imageScale}px`;
+          overlay.style.height = `${height * imageScale}px`;
+
+          // Initial font size
+          let fontSize = Math.max(16, height * imageScale * 0.6);
+          overlay.style.fontSize = `${fontSize}px`;
+
+          container.appendChild(overlay);
+
+          const MIN_FONT_SIZE = 8;
+          while (
+            overlay.scrollWidth > overlay.clientWidth &&
+            fontSize > MIN_FONT_SIZE
+          ) {
+            fontSize -= 1;
+            overlay.style.fontSize = `${fontSize}px`;
+          }
+        });
+      }
+    </script>
   </body>
 </html>

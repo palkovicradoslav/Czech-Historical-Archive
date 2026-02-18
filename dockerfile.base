@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
 
 # copy requirement files first (for layer caching)
 COPY requirements.txt .
-COPY src/ /app/src/
+COPY src/utils.py /app/
+COPY src/genealogy/ /app/genealogy/
 
 # install deps
 RUN pip install --no-cache-dir -r requirements.txt
