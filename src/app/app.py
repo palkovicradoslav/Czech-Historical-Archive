@@ -25,7 +25,7 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Get data directory: use environment variable if set (Docker), otherwise use CWD-relative path
+# use environment variable if set by Docker, otherwise use CWD-relative path
 _data_dir = os.environ.get('DATA_DIR')
 if _data_dir and os.path.exists(_data_dir):
     RECORDS_DIR = os.path.normpath(
@@ -34,7 +34,6 @@ if _data_dir and os.path.exists(_data_dir):
         _data_dir, 'genealogy_structured_records'))
     IMAGES_DIR = os.path.normpath(os.path.join(_data_dir, 'images'))
 else:
-    # Fallback: assume 'data' folder exists in current working directory
     RECORDS_DIR = os.path.abspath(os.path.join('data', 'structured_records'))
     GEN_RECORDS_DIR = os.path.abspath(
         os.path.join('data', 'genealogy_structured_records'))

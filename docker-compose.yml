@@ -23,7 +23,6 @@ services:
       - ./data:/app/data
       - ./src/app/static/images:/app/app/static/images
       - ./src/app/vital_records_index:/app/app/vital_records_index
-      - ./src/genealogy:/app/genealogy
 
     command: python app/app.py
 
