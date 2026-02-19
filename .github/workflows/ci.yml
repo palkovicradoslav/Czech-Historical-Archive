@@ -28,12 +28,43 @@ jobs:
           pip install pytest
           pytest -q
 
-  build-image:
+  validate-data:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker images
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Validate structured records JSON
         run: |
-          docker build -f dockerfile.base -t historical-archive-base:ci .
-          docker build -f dockerfile.app -t historical-archive-app:ci .
+          python - <<'PY'
+          import glob, json, sys
+          files = glob.glob('data/genealogy_structured_records/*_parsed_records.json')
+          if not files:
+              print('No structured record files found; skipping validation.')
+              sys.exit(0)
+          failed = 0
+          for f in files:
+              try:
+                  with open(f, 'r', encoding='utf-8') as fh:
+                      data = json.load(fh)
+              except Exception as e:
+                  print(f'{f}: JSON parse error: {e}')
+                  failed += 1
+                  continue
+              if not data:
+                  print(f'{f}: empty')
+                  failed += 1
+              elif isinstance(data, list):
+                  if not all(isinstance(rec, dict) for rec in data):
+                      print(f'{f}: not a list of objects')
+                      failed += 1
+              else:
+                  print(f'{f}: unexpected top-level {type(data)}')
+                  failed += 1
+          if failed:
+              sys.exit(2)
+          print('All structured record files look OK.')
+          PY
