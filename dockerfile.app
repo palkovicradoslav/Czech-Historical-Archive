@@ -1,10 +1,13 @@
 FROM historical-archive-base:latest
 
 # Copy the application code into the container
-COPY app/ /app/app/
-COPY pages/ /app/pages/
+COPY src/app/ /app/app/
+COPY data /app/data/
 
 WORKDIR /app
+
+# Set environment variable for data directory
+ENV DATA_DIR=/app/data
 
 EXPOSE 5000
 

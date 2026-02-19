@@ -20,21 +20,31 @@ This project contains an end-to-end pipeline for
 
 ```
 .
-├── app/                               # Flask web app (static, templates)
-├── pages/
-│   ├── images/                        # original scanned images (birth|death|marriage)
-│   ├── recognition_results/           # PageXML outputs from HTR
-│   └── structured_records/            # JSON outputs after extraction
-│   └── genealogy_structured_records/  # JSON outputs containing genealogical information
-├── extraction/                        # structured_records_extraction.py (LLM-based)
-├── genealogy/                         # genealogy.py
-├── recognition/                       # HTR models, dictionaries & pipeline
-├── .env.example
+├── CITATION.cff
 ├── docker-compose.yml
-├── process_images.sh
+├── dockerfile.app
+├── dockerfile.base
+├── dockerfile.worker
+├── LICENSE
 ├── readme.md
 ├── requirements.txt
-└── utils.py
+├── config/
+├── data/
+│   ├── genealogy_structured_records/
+│   ├── images/
+│   ├── recognition_results/
+│   └── structured_records/
+├── scripts/
+│   └── process_images.sh
+├── src/
+│   ├── utils.py
+│   ├── app/
+│   ├── extraction/
+│   ├── genealogy/
+│   └── recognition/
+├── static/
+├── tests/
+└── ...
 ```
 
 ---

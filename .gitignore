@@ -10,9 +10,26 @@ __pycache__/
 
 .env
 
-# large model
-recognition/models/trocr_model
+src/recognition/models/trocr_model/
 
-# static files
-app/static/images/*
-pages/genealogy_structured_records
+# App runtime artifacts
+/src/app/vital_records_index/
+/src/app/static/
+
+*.pkl
+
+# Environment files
+.env
+.env.*
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+
+# Tests / caches
+.pytest_cache/
