@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-webapp
+  namespace: historical-ocr
+  labels:
+    app: ocr-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocr-webapp
+  template:
+    metadata:
+      labels:
+        app: ocr-webapp
+    spec:
+      containers:
+        - name: webapp
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: ocr-webapp-config
+          env:
+            - name: DATA_DIR
+              value: /app/data
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ocr-api-keys
+                  key: OPENROUTER_API_KEY
+          volumeMounts:
+            - name: pages-data
+              mountPath: /app/data
+            - name: app-state
+              mountPath: /app/app/vital_records_index
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: pages-data
+          persistentVolumeClaim:
+            claimName: ocr-pages-pvc
+        - name: app-state
+          persistentVolumeClaim:
+            claimName: ocr-data-pvc

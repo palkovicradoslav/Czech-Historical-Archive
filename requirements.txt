@@ -21,3 +21,8 @@ google-genai==1.2.0
 dotenv==0.9.9
 nltk==3.9.1
 numpy
+fastapi
+python-multipart
+uvicorn[standard]==0.22.0
+google-cloud-storage==2.10.0
+python-dotenv

@@ -1,0 +1,27 @@
+# Ignore common files
+.git
+.gitignore
+.dockerignore
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+env/
+venv/
+
+# Ignore Docker files not needed for Cloud Run
+dockerfile.base
+dockerfile.worker
+docker-compose.yml
+
+# Ignore large unnecessary directories if any
+node_modules/
+.pytest_cache/
+
+recognition/
+extraction/
+

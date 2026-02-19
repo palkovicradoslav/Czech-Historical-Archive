@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-worker
+  namespace: historical-ocr
+  labels:
+    app: ocr-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocr-worker
+  template:
+    metadata:
+      labels:
+        app: ocr-worker
+    spec:
+      initContainers:
+        - name: setup-keys-file
+          image: busybox:1.35
+          command:
+            [
+              "sh",
+              "-c",
+              "cat > /app/keys.json << EOF\n{\n  \"OPENROUTER_API_KEY\": \"$OPENROUTER_API_KEY\",\n  \"GEMINI_API_KEY\": \"$GEMINI_API_KEY\"\n}\nEOF",
+            ]
+          env:
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ocr-api-keys
+                  key: OPENROUTER_API_KEY
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ocr-api-keys
+                  key: GEMINI_API_KEY
+          volumeMounts:
+            - name: keys-volume
+              mountPath: /app
+      containers:
+        - name: ocr-worker
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-worker:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          env:
+            - name: DATA_DIR
+              value: /app/data
+          volumeMounts:
+            - name: pages-data
+              mountPath: /app/data
+            - name: worker-temp
+              mountPath: /tmp/worker
+            - name: keys-volume
+              mountPath: /app/keys.json
+              subPath: keys.json
+              readOnly: true
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          command: ["/bin/bash", "-c", "while true; do sleep 3600; done"]
+      volumes:
+        - name: pages-data
+          persistentVolumeClaim:
+            claimName: ocr-pages-pvc
+        - name: worker-temp
+          emptyDir: {}
+        - name: keys-volume
+          emptyDir: {}
