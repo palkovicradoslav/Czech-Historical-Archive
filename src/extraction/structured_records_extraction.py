@@ -615,8 +615,7 @@ def parse_args():
     parser.add_argument(
         '--model',
         type=str,
-        # suitable alternative "openai/gpt-oss-120b:free"
-        default="qwen/qwen-2.5-72b-instruct:free",
+        default="openai/gpt-oss-120b:free",
         help='OpenRouter model for extracting information out of records.'
     )
 

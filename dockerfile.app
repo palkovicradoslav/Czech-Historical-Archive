@@ -6,6 +6,9 @@ COPY data /app/data/
 
 WORKDIR /app
 
+# Set environment variable for data directory
+ENV DATA_DIR=/app/data
+
 EXPOSE 5000
 
 CMD ["python", "app/app.py"]

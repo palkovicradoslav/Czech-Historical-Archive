@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-bs-theme="light">
   <head>
     <meta charset="UTF-8" />
@@ -47,7 +47,9 @@
         font-family: "Inter", sans-serif;
         background-color: var(--app-bg);
         color: var(--text-color);
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
       }
 
       #app-container {
@@ -107,7 +109,10 @@
         border-radius: 0.75rem;
         margin-bottom: 1.5rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        transition:
+          all 0.3s ease,
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
       .result-card-fresh:hover {
@@ -426,7 +431,7 @@
                   class="form-control"
                   id="inputPath"
                   name="input_path"
-                  placeholder="Default: ./pages/genealogy_structured_records"
+                  placeholder="Default: ./data/genealogy_structured_records"
                 />
                 <div class="form-text">
                   Leave blank to use the default server path.
@@ -489,7 +494,7 @@
       const searchTypeSelect = document.getElementById("searchType");
       const recordTypeSelect = document.getElementById("recordType");
       const fieldSelectContainer = document.getElementById(
-        "fieldSelectContainer"
+        "fieldSelectContainer",
       );
       const fieldSelect = document.getElementById("field");
       const initialResultsHTML =
@@ -529,7 +534,7 @@
           });
         } else {
           const groupToShow = fieldSelect.querySelector(
-            `.${selectedType}-fields`
+            `.${selectedType}-fields`,
           );
           if (groupToShow) {
             groupToShow.style.display = "block";
@@ -644,11 +649,11 @@
             title: r.name || "Unknown Name",
             subtitle: `Died on ${r.date_of_death || "Unknown"}`,
           },
-        }[r.record_type] || {
+        })[r.record_type] || {
           icon: "bi-file-earmark-text",
           title: "Record",
           subtitle: `ID: ${r.id}`,
-        });
+        };
 
       // Results
       function createResultCard(result) {
@@ -694,7 +699,7 @@
           .querySelector(`#toggle-text-${result.id}`)
           .addEventListener("change", function () {
             const container = card.querySelector(
-              `#image-container-${result.id}`
+              `#image-container-${result.id}`,
             );
             const mainImage = container.querySelector("img.record-image");
             container.classList.toggle("transcription-active", this.checked);
@@ -732,7 +737,7 @@
                               "Born",
                               `${r.groom_birthday || ""} in ${
                                 r.groom_birthplace || ""
-                              }`.trim()
+                              }`.trim(),
                             )}
                         </div>
                         <div class="col-md-6 mt-3 mt-md-0">
@@ -742,7 +747,7 @@
                               "Born",
                               `${r.bride_birthday || ""} in ${
                                 r.bride_birthplace || ""
-                              }`.trim()
+                              }`.trim(),
                             )}
                         </div>
                     </div>
@@ -751,11 +756,11 @@
                     <div class="row">
                         <div class="col-md-6">${kv(
                           "Date",
-                          r.wedding_date
+                          r.wedding_date,
                         )}</div>
                         <div class="col-md-6">${kv(
                           "Place",
-                          r.wedding_place
+                          r.wedding_place,
                         )}</div>
                     </div>`;
         } else if (r.record_type === "birth") {
@@ -763,9 +768,9 @@
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-body-secondary">Birth Details</h6>
                             ${kv("Name", r.name)} ${kv(
-            "Date",
-            r.birthdate
-          )} ${kv("Place", r.birthplace)}
+                              "Date",
+                              r.birthdate,
+                            )} ${kv("Place", r.birthplace)}
                         </div>
                         <div class="col-md-6 mt-3 mt-md-0">
                             <h6 class="fw-semibold text-body-secondary">Parents</h6>
@@ -778,15 +783,15 @@
                         <div class="col-md-12">${kv("Name", r.name)}</div>
                         <div class="col-md-6">${kv(
                           "Date",
-                          r.date_of_death
+                          r.date_of_death,
                         )}</div>
                         <div class="col-md-6">${kv(
                           "Residence",
-                          r.place_of_living
+                          r.place_of_living,
                         )}</div>
                         <div class="col-md-12">${kv(
                           "Cause",
-                          r.reason_of_death
+                          r.reason_of_death,
                         )}</div>
                     </div>`;
         }
@@ -799,7 +804,7 @@
           Object.keys(genealogy).every(
             (k) =>
               !genealogy[k] ||
-              (Array.isArray(genealogy[k]) && genealogy[k].length === 0)
+              (Array.isArray(genealogy[k]) && genealogy[k].length === 0),
           )
         )
           return "";
@@ -814,24 +819,24 @@
           (genealogy.birth_info.birthdate || genealogy.birth_info.birthplace)
         ) {
           html += `<li><i class="bi bi-person-arms-up icon"></i><div><strong>Born:</strong> <strong>${kv(
-            genealogy.birth_info.birthdate
+            genealogy.birth_info.birthdate,
           )}</strong> in <strong>${kv(
-            genealogy.birth_info.birthplace
+            genealogy.birth_info.birthplace,
           )}</strong></div></li>`;
         }
         if (genealogy.marriages && genealogy.marriages.length > 0) {
           genealogy.marriages.forEach((m) => {
             html += `<li><i class="bi bi-people-fill icon"></i><div><strong>Spouse:</strong> <strong>${kv(
-              m.spouse_name
+              m.spouse_name,
             )}</strong> (Married: <strong>${kv(
-              m.wedding_date
+              m.wedding_date,
             )}</strong>)</div></li>`;
           });
         }
         if (genealogy.children && genealogy.children.length > 0) {
           genealogy.children.forEach((c) => {
             html += `<li><i class="bi bi-person-standing icon"></i><div><strong>Child:</strong> <strong>${kv(
-              c.name
+              c.name,
             )}</strong> (Born: <strong>${kv(c.birthdate)}</strong>)</div></li>`;
           });
         }
@@ -840,9 +845,9 @@
           (genealogy.death_info.deathdate || genealogy.death_info.deathplace)
         ) {
           html += `<li><i class="bi bi-heartbreak-fill icon"></i><div><strong>Died:</strong> <strong>${kv(
-            genealogy.death_info.deathdate
+            genealogy.death_info.deathdate,
           )}</strong> in <strong>${kv(
-            genealogy.death_info.deathplace
+            genealogy.death_info.deathplace,
           )}</strong></div></li>`;
         }
 
@@ -853,7 +858,7 @@
       function fetchAndRenderTextLines(regionId, filePath, container) {
         if (container.querySelector(".text-line-overlay")) return;
         const url = `/get_text_lines?region_id=${encodeURIComponent(
-          regionId
+          regionId,
         )}&file_path=${encodeURIComponent(filePath)}`;
         fetch(url)
           .then((res) => res.json())
@@ -865,7 +870,7 @@
                 container,
                 image,
                 data.text_lines,
-                data.region_coords
+                data.region_coords,
               );
             if (image.complete) render();
             else image.onload = render;

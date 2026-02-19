@@ -25,20 +25,26 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-RECORDS_DIR = os.path.normpath(
-    os.path.join(BASE_DIR, '..', '..', 'data', 'structured_records')
-)
-GEN_RECORDS_DIR = os.path.normpath(
-    os.path.join(BASE_DIR, '..', '..', 'data', 'genealogy_structured_records')
-)
+# Get data directory: use environment variable if set (Docker), otherwise use CWD-relative path
+_data_dir = os.environ.get('DATA_DIR')
+if _data_dir and os.path.exists(_data_dir):
+    RECORDS_DIR = os.path.normpath(
+        os.path.join(_data_dir, 'structured_records'))
+    GEN_RECORDS_DIR = os.path.normpath(os.path.join(
+        _data_dir, 'genealogy_structured_records'))
+    IMAGES_DIR = os.path.normpath(os.path.join(_data_dir, 'images'))
+else:
+    # Fallback: assume 'data' folder exists in current working directory
+    RECORDS_DIR = os.path.abspath(os.path.join('data', 'structured_records'))
+    GEN_RECORDS_DIR = os.path.abspath(
+        os.path.join('data', 'genealogy_structured_records'))
+    IMAGES_DIR = os.path.abspath(os.path.join('data', 'images'))
+
 CROPPED_IMAGES_DIR = os.path.normpath(
     os.path.join(BASE_DIR, 'static', 'images')
 )
 INDEX_DIR = os.path.normpath(
     os.path.join(BASE_DIR, 'vital_records_index')
-)
-IMAGES_DIR = os.path.normpath(
-    os.path.join(BASE_DIR, '..', '..', 'data', 'images')
 )
 STATE_FILE = os.path.join(INDEX_DIR, 'records_state.json')
 

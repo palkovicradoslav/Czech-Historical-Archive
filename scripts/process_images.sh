@@ -1,11 +1,14 @@
-#!/usr/bin/env bash
-echo "Starting the worker container (detached)..."
-docker compose up -d ocr-worker
+#!/bin/bash
 
-echo "Running text recognition pipeline inside worker..."
-docker compose exec ocr-worker python -m recognition.pipeline --post-processing
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-echo "Running structured records extraction inside worker..."
-docker compose exec ocr-worker python -m extraction.structured_records_extraction
+cd "$SCRIPT_DIR"
 
-echo "Processing finished."
+echo "Starting the worker..."
+# docker-compose up -d ocr-worker
+
+echo "Step 1: Running text recognition pipeline..."
+# docker-compose exec ocr-worker python recognition/pipeline.py --post-processing
+
+echo "Step 2: Running structured information extraction..."
+docker-compose exec ocr-worker python extraction/structured_records_extraction.py
