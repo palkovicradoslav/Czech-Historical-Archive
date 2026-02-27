@@ -7,6 +7,7 @@ This project contains an end-to-end pipeline for
 3. Structured extraction to JSON (fields: name, date, place, relations, etc.)
 4. Indexing and full-text search + field search
 5. Flask web UI to browse records and check transcriptions against original images
+6. RAG for natural language queries over genealogical records
 
 # Demo
 
@@ -24,6 +25,7 @@ This project contains an end-to-end pipeline for
 ├── docker-compose.yml
 ├── dockerfile.app
 ├── dockerfile.base
+├── dockerfile.rag
 ├── dockerfile.worker
 ├── LICENSE
 ├── readme.md
@@ -41,6 +43,7 @@ This project contains an end-to-end pipeline for
 │   ├── app/
 │   ├── extraction/
 │   ├── genealogy/
+│   ├── rag/
 │   └── recognition/
 ├── static/
 ├── tests/
@@ -91,7 +94,7 @@ This project contains an end-to-end pipeline for
 
 ## Managing Docker Services for Specific Tasks
 
-`docker-compose.yml` defines three services: `base`, `webapp`, and `ocr-worker`. You can control them individually or all at once.
+`docker-compose.yml` defines four services: `base`, `webapp`, `ocr-worker`, and `rag-system`. You can control them individually or all at once.
 
 ### Starting and Stopping All Services
 
@@ -128,6 +131,29 @@ docker-compose up -d ocr-worker
 # To stop only the OCR worker service:
 docker-compose stop ocr-worker
 ```
+
+### RAG for Natural Language Queries
+
+The RAG (Retrieval-Augmented Generation) allows you to ask natural language questions about your genealogical records using semantic search and LLM-powered responses.
+
+```bash
+# To start only the RAG service:
+docker-compose build rag-system && docker-compose up -d rag-system
+
+# Interact with the RAG pipeline via interactive CLI:
+docker-compose exec rag-system python rag/rag_system.py
+
+# Stop the RAG service:
+docker-compose stop rag-system
+```
+
+**Example queries:**
+
+- "Who was born in Lhotka in 1863?"
+- "Find all marriages involving the surname Novák"
+- "Whose parents are named Josef and Alžbeta?"
+
+**Note**: The RAG service requires the `GEMINI_API_KEY` environment variable to be set in your `.env` file, as it uses Google Gemini for language generation.
 
 ## Processing Pipeline
 
@@ -204,7 +230,7 @@ chmod +x process_images.sh
 ### Gemini (Optional)
 
 1. Obtain a Gemini API key from [AI Studio](https://aistudio.google.com/apikey).
-2. Store it in `.env` as `GEMINI_API_KEY` if you wish to use Gemini models.
+2. Store it in `.env` as `GEMINI_API_KEY` if you wish to use Gemini models (necessary for RAG).
 
 ---
 

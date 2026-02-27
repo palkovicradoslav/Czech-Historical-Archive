@@ -48,3 +48,16 @@ services:
     command: ["sleep", "infinity"]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all # Make GPU available to container
+
+  # RAG system for genealogical records
+  rag-system:
+    build:
+      context: .
+      dockerfile: dockerfile.rag
+    env_file:
+      - ./.env
+    volumes:
+      - ./src/rag:/app/rag
+      - ./data:/app/data
+      - ./data/genealogy_structured_records:/app/data/genealogy_structured_records
+    command: ["sleep", "infinity"]
