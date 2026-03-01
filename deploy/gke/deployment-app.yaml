@@ -1,51 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ocr-webapp
+  name: ocr-app
   namespace: historical-ocr
   labels:
-    app: ocr-webapp
+    app: ocr-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ocr-webapp
+      app: ocr-app
   template:
     metadata:
       labels:
-        app: ocr-webapp
+        app: ocr-app
     spec:
       containers:
-        - name: webapp
-          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:latest
-          imagePullPolicy: IfNotPresent
+        - name: app
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
+          imagePullPolicy: Always
           workingDir: /app
           ports:
             - containerPort: 5000
               name: http
           envFrom:
             - configMapRef:
-                name: ocr-webapp-config
+                name: ocr-app-config
           env:
             - name: DATA_DIR
               value: /app/data
-            - name: OPENROUTER_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: ocr-api-keys
-                  key: OPENROUTER_API_KEY
           volumeMounts:
-            - name: pages-data
+            - name: app-data
               mountPath: /app/data
-            - name: app-state
+            - name: app-data
               mountPath: /app/app/vital_records_index
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "2Gi"
+              cpu: "800m"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "5Gi"
+              cpu: "2000m"
           livenessProbe:
             httpGet:
               path: /
@@ -59,9 +54,6 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
-        - name: pages-data
+        - name: app-data
           persistentVolumeClaim:
-            claimName: ocr-pages-pvc
-        - name: app-state
-          persistentVolumeClaim:
-            claimName: ocr-data-pvc
+            claimName: ocr-app-pvc

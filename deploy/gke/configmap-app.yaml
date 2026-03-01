@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ocr-webapp-config
+  name: ocr-app-config
   namespace: historical-ocr
 data:
   APP_ENV: "production"

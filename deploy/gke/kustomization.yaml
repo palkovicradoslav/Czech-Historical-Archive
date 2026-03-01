@@ -2,10 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - configmap-webapp.yaml
-  - secret-api-keys.yaml
+  - configmap-app.yaml
   - pvc-data.yaml
-  - pvc-pages.yaml
-  - deployment-webapp.yaml
-  - service-webapp.yaml
-  - deployment-worker.yaml
+  - deployment-app.yaml
+  - service-app.yaml

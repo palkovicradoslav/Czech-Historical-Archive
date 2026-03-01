@@ -55,26 +55,21 @@ jobs:
                   print(f'{f}: JSON parse error: {e}')
                   failed += 1
                   continue
-                if not data:
+              if not data:
                   print(f'{f}: empty')
                   failed += 1
-                elif isinstance(data, list):
+              elif isinstance(data, list):
                   if not all(isinstance(rec, dict) for rec in data):
-                    print(f'{f}: not a list of objects')
-                    failed += 1
-                elif isinstance(data, dict):
-<<<<<<< HEAD
-                  # top-level dict is acceptable (some exports use an object per file)
-                  print(f'{f}: top-level object accepted')
-=======
+                      print(f'{f}: not a list of objects')
+                      failed += 1
+              elif isinstance(data, dict):
                   if not data:
-                    print(f'{f}: empty')
-                    failed += 1
+                      print(f'{f}: empty')
+                      failed += 1
                   elif not all(isinstance(rec, dict) for rec in data.values()):
-                    print(f'{f}: not a dict of objects')
-                    failed += 1
->>>>>>> main
-                else:
+                      print(f'{f}: not a dict of objects')
+                      failed += 1
+              else:
                   print(f'{f}: unexpected top-level {type(data)}')
                   failed += 1
           if failed:

@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-index-job
+  namespace: historical-ocr
+  labels:
+    app: ocr-webapp
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 3600 # 1 hour timeout
+  template:
+    metadata:
+      labels:
+        app: ocr-webapp
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: indexer
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
+          imagePullPolicy: Always
+          workingDir: /app
+          command:
+            - python
+            - -c
+            - |
+              import os
+              import sys
+              import logging
+
+              logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+              sys.path.insert(0, '/app')
+              sys.path.insert(0, '/app/app')
+
+              from records_indexer import VitalRecordsIndexer
+              from genealogy.genealogy import process_and_save
+
+              DATA_DIR = '/app/data'
+              GEN_RECORDS_DIR = os.path.join(DATA_DIR, 'genealogy_structured_records')
+              RECORDS_DIR = os.path.join(DATA_DIR, 'structured_records')
+              INDEX_DIR = '/app/app/vital_records_index'
+
+              if not os.path.exists(RECORDS_DIR):
+                  logging.error(f'Input path {RECORDS_DIR} does not exist')
+                  sys.exit(1)
+
+              try:
+                  logging.info(f'Starting index build from {RECORDS_DIR}...')
+                  
+                  logging.info('Building genealogical connections...')
+                  family_tree_builder = process_and_save(RECORDS_DIR, GEN_RECORDS_DIR)
+                  
+                  logging.info('Building search index...')
+                  indexer = VitalRecordsIndexer(index_dir=INDEX_DIR)
+                  record_count = indexer.build_index(RECORDS_DIR)
+                  
+                  logging.info(f'Successfully indexed {record_count} vital records')
+                  
+              except Exception as e:
+                  logging.error(f'Index build failed: {str(e)}')
+                  sys.exit(1)
+          env:
+            - name: DATA_DIR
+              value: /app/data
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: app-data
+              mountPath: /app/app/vital_records_index
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: ocr-app-pvc

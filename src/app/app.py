@@ -51,9 +51,9 @@ GENEALOGY_FILE = os.path.join(INDEX_DIR, 'family_tree.pkl')
 
 # Create static directories if they don't exist
 if not os.path.exists("static"):
-    os.makedirs("static")
+    os.makedirs("static", exist_ok=True)
 if not os.path.exists(CROPPED_IMAGES_DIR):
-    os.makedirs(CROPPED_IMAGES_DIR)
+    os.makedirs(CROPPED_IMAGES_DIR, exist_ok=True)
 
 # Check if index exists before initializing
 if os.path.exists(INDEX_DIR):

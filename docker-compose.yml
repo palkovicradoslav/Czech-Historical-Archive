@@ -61,3 +61,5 @@ services:
       - ./data:/app/data
       - ./data/genealogy_structured_records:/app/data/genealogy_structured_records
     command: ["sleep", "infinity"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all # Make GPU available to container

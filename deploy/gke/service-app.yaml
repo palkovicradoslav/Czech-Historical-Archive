@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ocr-webapp-service
+  name: ocr-app-service
   namespace: historical-ocr
   labels:
-    app: ocr-webapp
+    app: ocr-app
 spec:
   type: LoadBalancer
   ports:
@@ -13,4 +13,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: ocr-webapp
+    app: ocr-app
