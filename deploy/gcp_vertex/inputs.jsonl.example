@@ -1,0 +1,3 @@
+{"gcs_uri": "gs://YOUR_BUCKET/inputs/image1.jpg", "record_type": "birth", "post_processing": false, "upload_output": true}
+{"gcs_uri": "gs://YOUR_BUCKET/inputs/image2.jpg", "record_type": "death", "post_processing": false, "upload_output": true}
+{"gcs_uri": "gs://YOUR_BUCKET/inputs/image3.jpg", "record_type": "marriage", "post_processing": true, "upload_output": true}
