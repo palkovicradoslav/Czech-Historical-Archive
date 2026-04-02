@@ -14,6 +14,24 @@ spec:
         app: ocr-webapp
     spec:
       restartPolicy: Never
+      initContainers:
+        - name: seed-data
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /mnt/pvc/vital_records_index
+              if [ -z "$(ls -A /mnt/pvc/data 2>/dev/null)" ]; then
+                echo "PVC data directory is empty — seeding from image..."
+                mkdir -p /mnt/pvc/data
+                cp -a /app/data/. /mnt/pvc/data/
+                echo "Seeding complete."
+              else
+                echo "PVC data directory already populated, skipping seed."
+              fi
+          volumeMounts:
+            - name: app-data
+              mountPath: /mnt/pvc
       containers:
         - name: indexer
           image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
@@ -72,8 +90,10 @@ spec:
           volumeMounts:
             - name: app-data
               mountPath: /app/data
+              subPath: data
             - name: app-data
               mountPath: /app/app/vital_records_index
+              subPath: vital_records_index
       volumes:
         - name: app-data
           persistentVolumeClaim:
