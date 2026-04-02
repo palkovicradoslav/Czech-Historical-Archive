@@ -36,6 +36,9 @@ This project contains an end-to-end pipeline for
 │   ├── images/
 │   ├── recognition_results/
 │   └── structured_records/
+├── deploy/
+│   ├── gcp_vertex/
+│   └── gke/
 ├── scripts/
 │   └── process_images.sh
 ├── src/

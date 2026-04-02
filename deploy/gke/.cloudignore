@@ -1,0 +1,29 @@
+# Ignore common files
+
+.git
+.gitignore
+.dockerignore
+.DS_Store
+**pycache**/
+_.pyc
+_.pyo
+\*.pyd
+.Python
+.env
+.venv
+env/
+venv/
+
+# Ignore Docker files not needed for image builds
+
+dockerfile.base
+dockerfile.worker
+docker-compose.yml
+
+# Ignore large unnecessary directories if any
+
+node_modules/
+.pytest_cache/
+
+recognition/
+extraction/

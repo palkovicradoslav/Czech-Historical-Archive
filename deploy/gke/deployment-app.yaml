@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-app
+  namespace: historical-ocr
+  labels:
+    app: ocr-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocr-app
+  template:
+    metadata:
+      labels:
+        app: ocr-app
+    spec:
+      initContainers:
+        - name: seed-data
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /mnt/pvc/vital_records_index
+              if [ -z "$(ls -A /mnt/pvc/data 2>/dev/null)" ]; then
+                echo "PVC data directory is empty — seeding from image..."
+                mkdir -p /mnt/pvc/data
+                cp -a /app/data/. /mnt/pvc/data/
+                echo "Seeding complete."
+              else
+                echo "PVC data directory already populated, skipping seed."
+              fi
+          volumeMounts:
+            - name: app-data
+              mountPath: /mnt/pvc
+      containers:
+        - name: app
+          image: europe-west1-docker.pkg.dev/PROJECT_ID/ocr-repo/historical-ocr-app:IMAGE_TAG
+          imagePullPolicy: Always
+          workingDir: /app
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: ocr-app-config
+          env:
+            - name: DATA_DIR
+              value: /app/data
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+              subPath: data
+            - name: app-data
+              mountPath: /app/app/vital_records_index
+              subPath: vital_records_index
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "800m"
+            limits:
+              memory: "5Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: ocr-app-pvc
