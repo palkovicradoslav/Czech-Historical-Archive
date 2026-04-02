@@ -34,9 +34,12 @@ INDEX_DIR = os.path.normpath(
     os.path.join(BASE_DIR, 'vital_records_index')
 )
 LIMIT = 10
-CROPPED_IMAGES_DIR = os.path.normpath(
-    os.path.join(BASE_DIR, 'static', 'images')
-)
+if _data_dir and os.path.exists(_data_dir):
+    CROPPED_IMAGES_DIR = os.path.normpath(
+        os.path.join(_data_dir, 'cropped_images'))
+else:
+    CROPPED_IMAGES_DIR = os.path.normpath(
+        os.path.join(BASE_DIR, 'static', 'images'))
 
 
 class DiacriticRemovingTokenizer(Tokenizer):

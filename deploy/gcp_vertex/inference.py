@@ -56,7 +56,7 @@ def predict_batch(local_inputs_jsonl, output_gcs_dir, wait=True):
         terminal = {"JOB_STATE_SUCCEEDED", "JOB_STATE_FAILED",
                     "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED"}
         while job.state.name not in terminal:
-            print(f"  {job.state.name}")
+            print(f"{job.state.name}")
             time.sleep(30)
             job._sync_gca_resource()
         print(f"  {job.state.name}")
@@ -81,13 +81,13 @@ def get_batch_results(output_gcs_dir):
 
 if __name__ == "__main__":
     # Single image
-    # result = predict_online(
-    #     gcs_uri=f"gs://{BUCKET}/inputs/your-image.jpg",
-    #     record_type="birth",
-    # )
-    # print(result)
+    result = predict_online(
+        gcs_uri=f"gs://{BUCKET}/inputs/your-image.jpg",
+        record_type="marriage",
+    )
+    print(result)
 
-    # Batch prediction — edit inputs.jsonl first (see inputs.jsonl.example)
+    # Batch prediction
     job = predict_batch(
         local_inputs_jsonl="deploy/gcp_vertex/inputs.jsonl",
         output_gcs_dir=f"gs://{BUCKET}/batch_outputs/",

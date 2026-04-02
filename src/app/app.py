@@ -39,9 +39,13 @@ else:
         os.path.join('data', 'genealogy_structured_records'))
     IMAGES_DIR = os.path.abspath(os.path.join('data', 'images'))
 
-CROPPED_IMAGES_DIR = os.path.normpath(
-    os.path.join(BASE_DIR, 'static', 'images')
-)
+if _data_dir and os.path.exists(_data_dir):
+    # for deployment
+    CROPPED_IMAGES_DIR = os.path.normpath(
+        os.path.join(_data_dir, 'cropped_images'))
+else:
+    CROPPED_IMAGES_DIR = os.path.normpath(
+        os.path.join(BASE_DIR, 'static', 'images'))
 INDEX_DIR = os.path.normpath(
     os.path.join(BASE_DIR, 'vital_records_index')
 )

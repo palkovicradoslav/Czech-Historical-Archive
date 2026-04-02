@@ -7,7 +7,18 @@ REGION=europe-west1
 ZONE=europe-west1-b
 CLUSTER_NAME=historical-ocr-cluster
 ARTIFACT_REPO=ocr-repo
-TAG=${TAG:-$(date)}
+
+echo "Determining tag"
+LATEST_TAG=$(gcloud artifacts docker tags list \
+  "${REGION}-docker.pkg.dev/${PROJECT}/${ARTIFACT_REPO}/historical-ocr-app" \
+  --limit=1 --sort-by="~UPDATE_TIME" --format="value(tag)" 2>/dev/null || echo "v0")
+
+TAG_NUMBER=$(echo "${LATEST_TAG#v}" | grep -oE '^[0-9]+' || echo 0)
+NEXT_TAG="v$((TAG_NUMBER + 1))"
+
+echo "Tag: $NEXT_TAG"
+TAG=$NEXT_TAG
+
 WEBAPP_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/${ARTIFACT_REPO}/historical-ocr-app:${TAG}"
 
 # Navigate to repository root
@@ -55,7 +66,7 @@ docker build -t "$WEBAPP_IMAGE" -f deploy/gke/Dockerfile.app .
 docker push "$WEBAPP_IMAGE"
 
 echo "Deploying..."
-cd deploy/gke
+cd "deploy/gke"
 kustomize build . | sed -e "s|PROJECT_ID|$PROJECT|g" -e "s|IMAGE_TAG|$TAG|g" | kubectl apply -f -
 
 echo "Rollout"

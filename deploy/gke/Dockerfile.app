@@ -19,6 +19,7 @@ COPY src/utils.py          /app/
 COPY src/genealogy/        /app/genealogy/
 COPY src/app/              /app/app/
 COPY src/app/records_indexer.py /app/
+COPY data/                 /app/data/
 
 WORKDIR /app
 
