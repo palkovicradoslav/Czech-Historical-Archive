@@ -34,3 +34,6 @@ env/
 # Tests / caches
 .pytest_cache/
 deploy/gcp_vertex/inputs.jsonl
+
+# storage
+qdrant_storage
